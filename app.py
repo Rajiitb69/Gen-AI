@@ -20,7 +20,6 @@ You always reply with:
 - Clear, concise answers
 - Relevant code blocks
 - Helpful comments
-- Address the user as {username}
 - Language as asked by the user
 - No extra text unless necessary"""
 
@@ -83,6 +82,12 @@ if user_name and groq_api_key and query:
         st.session_state.messages.append({'role': 'assistant', "content": final_answer})
         
 elif user_name and groq_api_key and not query:
+    if "messages" not in st.session_state:
+        st.session_state["messages"]=[
+            {"role": "assistant", "content": f"Hi {user_name}, I'm a code assistant. How can I help you?"}
+        ]
+    for msg in st.session_state.messages:
+        st.chat_message(msg["role"]).write(msg['content'])
     st.warning("Please type a coding question to get started.")
 elif not user_name or not groq_api_key:
     st.info("👈 Please enter your name and Groq API key in the sidebar to continue.")
