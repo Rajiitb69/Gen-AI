@@ -30,7 +30,7 @@ prompt_template = ChatPromptTemplate.from_messages([
 
 
 
-st.title("🔎 LangChain - Code-Assistant)
+st.title("🔎 LangChain - Code-Assistant")
 """
 It's a code assistant that provides you with answers to your queries. 
 It helps users with code suggestions, debugging, and explanations 
