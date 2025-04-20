@@ -39,6 +39,17 @@ st.sidebar.title("INPUTS")
 user_name = st.sidebar.text_input("Enter your Name:")
 groq_api_key = st.sidebar.text_input("Enter your Groq API Key:",type="password")
 submitted = st.sidebar.button("Submit")
+
+# ✅ Reset messages if user changed
+if "prev_user_name" not in st.session_state:
+    st.session_state["prev_user_name"] = user_name
+
+if user_name != st.session_state["prev_user_name"] and user_name:
+    st.session_state["prev_user_name"] = user_name
+    st.session_state["messages"] = [
+        {"role": "assistant", "content": f"Hi {user_name}, I'm CodeGenie. How can I help you today?"}
+    ]
+
 query = st.chat_input(placeholder="Write your query?")
 
 if submitted and user_name and groq_api_key and query:
