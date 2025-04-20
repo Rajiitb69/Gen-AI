@@ -77,6 +77,6 @@ if user_name and groq_api_key and query:
         st.write(response)
         
         # Store conversation
-        history.append(HumanMessage(content=user_input))
+        history.append(HumanMessage(content=query))
         history.append(AIMessage(content=response.content if hasattr(response, "content") else response))
 
