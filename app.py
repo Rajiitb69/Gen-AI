@@ -16,29 +16,32 @@ You are currently helping a user named {username}.
 
 Your job is to help {username} with code suggestions, debugging, and explanations across programming languages like Python, Java, C++, JavaScript, SQL, etc.
 
-You always reply with:
+Your reply style should be:
+- Friendly and encouraging (start with phrases like "Great question!", "Sure!", or "Let's walk through it...")
 - Clear, concise answers
 - Relevant code blocks
-- Helpful comments
-- Language as asked by the user
-- No extra text unless necessary"""
+- Helpful comments and explanations
+- Address the user by name when appropriate
+- Use the language asked by the user
+- Keep extra text minimal, but don’t be robotic
+"""
 
 # Streamlit UI
 st.title("🤖 Your Coding Assistant")
 
 """
-It's a code assistant that provides you with answers to your queries.  
-It helps users with code suggestions, debugging, and explanations  
-across languages like Python, Java, C++, JavaScript, SQL, etc.
+It's a code assistant that provides you with answers to your queries. It helps users with code suggestions,
+debugging, and explanations across languages like Python, Java, C++, JavaScript, SQL, etc.
 """
 
 ## Sidebar for settings
 st.sidebar.title("INPUTS")
 user_name = st.sidebar.text_input("Enter your Name:")
 groq_api_key = st.sidebar.text_input("Enter your Groq API Key:",type="password")
+submitted = st.sidebar.button("Submit")
 query = st.chat_input(placeholder="Write your query?")
 
-if user_name and groq_api_key and query:
+if submitted and user_name and groq_api_key and query:
     if "messages" not in st.session_state:
         st.session_state["messages"]=[
             {"role": "assistant", "content": f"Hi {user_name}, I'm a code assistant. How can I help you?"}
@@ -81,7 +84,7 @@ if user_name and groq_api_key and query:
         st.write(final_answer)
         st.session_state.messages.append({'role': 'assistant', "content": final_answer})
         
-elif user_name and groq_api_key and not query:
+elif submitted and user_name and groq_api_key and not query:
     if "messages" not in st.session_state:
         st.session_state["messages"]=[
             {"role": "assistant", "content": f"Hi {user_name}, I'm a code assistant. How can I help you?"}
@@ -89,6 +92,6 @@ elif user_name and groq_api_key and not query:
     for msg in st.session_state.messages:
         st.chat_message(msg["role"]).write(msg['content'])
     st.warning("Please type a coding question to get started.")
-elif not user_name or not groq_api_key:
+elif submitted and (not user_name or not groq_api_key):
     st.info("👈 Please enter your name and Groq API key in the sidebar to continue.")
 
