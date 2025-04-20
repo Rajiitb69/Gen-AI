@@ -52,7 +52,7 @@ if "messages" not in st.session_state:
 for msg in st.session_state.messages:
     st.chat_message(msg["role"]).write(msg['content'])
 
-if query and groq_api_key:
+if user_name and groq_api_key and query:
     st.session_state.messages.append({"role": "user", "content": query})
     st.chat_message("user").write(query)
     
@@ -65,14 +65,10 @@ if query and groq_api_key:
                                 })
     
     chain: Runnable = prompt_template | llm3
-
-    # Code assistant function
-    def code_assistant_v1(user_name: str, user_input: str) -> str:
-      # Get or initialize history for this user
-      if user_name not in user_histories:
-          user_histories[user_name] = []
     
-      history = user_histories[user_name]
+    if user_name not in user_histories:
+        user_histories[user_name] = []
+    history = user_histories[user_name]
 
     with st.chat_message("assistant"):
         st_cb=StreamlitCallbackHandler(st.container(),expand_new_thoughts=False)
