@@ -28,15 +28,14 @@ prompt_template = ChatPromptTemplate.from_messages([
     ("human", "{input}")
 ])
 
+# Streamlit UI
+st.title("🤖 CodeGenie - Your Coding Assistant")
 
-
-st.title("🔎 LangChain - Code-Assistant")
-"""
-It's a code assistant that provides you with answers to your queries. 
-It helps users with code suggestions, debugging, and explanations 
-across programming languages like Python, Java, C++, JavaScript, SQL, etc.
-
-"""
+st.markdown("""
+It's a code assistant that provides you with answers to your queries.  
+It helps users with code suggestions, debugging, and explanations  
+across languages like Python, Java, C++, JavaScript, SQL, etc.
+""")
 
 ## Sidebar for settings
 st.sidebar.title("Inputs")
@@ -72,11 +71,16 @@ if user_name and groq_api_key and query:
 
     with st.chat_message("assistant"):
         st_cb=StreamlitCallbackHandler(st.container(),expand_new_thoughts=False)
-        response=chain.invoke({"input": st.session_state.messages,"chat_history": history},callbacks=[st_cb])
-        st.session_state.messages.append({'role':'assistant',"content":response})
-        st.write(response)
+        response=chain.invoke({"input": query,"chat_history": history}, callbacks=[st_cb])
+        final_answer = response.content if hasattr(response, "content") else str(response)
+        st.write(final_answer)
+        st.session_state.messages.append({'role': 'assistant', "content": final_answer})
         
         # Store conversation
-        history.append(HumanMessage(content=query))
-        history.append(AIMessage(content=response.content if hasattr(response, "content") else response))
+        history.append(HumanMessage(content = query))
+        history.append(AIMessage(content = final_answer))
+elif user_name and groq_api_key and not query:
+    st.warning("Please type a coding question to get started.")
+elif not user_name or not groq_api_key:
+    st.info("👈 Please enter your name and Groq API key in the sidebar to continue.")
 
