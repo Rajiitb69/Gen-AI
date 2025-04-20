@@ -75,7 +75,7 @@ if user_name and groq_api_key and query:
 
     with st.chat_message("assistant"):
         st_cb=StreamlitCallbackHandler(st.container(),expand_new_thoughts=False)
-        response=chain.invoke({"input": query,"chat_history": history}, callbacks=[st_cb])
+        response=chain.invoke({"input": query,"chat_history": chat_history}, callbacks=[st_cb])
         final_answer = response.content if hasattr(response, "content") else str(response)
         st.write(final_answer)
         st.session_state.messages.append({'role': 'assistant', "content": final_answer})
