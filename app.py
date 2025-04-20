@@ -38,7 +38,6 @@ debugging, and explanations across languages like Python, Java, C++, JavaScript,
 st.sidebar.title("INPUTS")
 user_name = st.sidebar.text_input("Enter your Name:")
 groq_api_key = st.sidebar.text_input("Enter your Groq API Key:",type="password")
-submitted = st.sidebar.button("Submit")
 
 # ✅ Reset messages if user changed
 if "prev_user_name" not in st.session_state:
@@ -52,7 +51,7 @@ if user_name != st.session_state["prev_user_name"] and user_name:
 
 query = st.chat_input(placeholder="Write your query?")
 
-if submitted and user_name and groq_api_key and query:
+if user_name and groq_api_key and query:
     if "messages" not in st.session_state:
         st.session_state["messages"]=[
             {"role": "assistant", "content": f"Hi {user_name}, I'm a code assistant. How can I help you?"}
@@ -95,7 +94,7 @@ if submitted and user_name and groq_api_key and query:
         st.write(final_answer)
         st.session_state.messages.append({'role': 'assistant', "content": final_answer})
         
-elif submitted and user_name and groq_api_key and not query:
+elif user_name and groq_api_key and not query:
     if "messages" not in st.session_state:
         st.session_state["messages"]=[
             {"role": "assistant", "content": f"Hi {user_name}, I'm a code assistant. How can I help you?"}
@@ -103,6 +102,6 @@ elif submitted and user_name and groq_api_key and not query:
     for msg in st.session_state.messages:
         st.chat_message(msg["role"]).write(msg['content'])
     st.warning("Please type a coding question to get started.")
-elif submitted and (not user_name or not groq_api_key):
+elif not user_name or not groq_api_key:
     st.info("👈 Please enter your name and Groq API key in the sidebar to continue.")
 
