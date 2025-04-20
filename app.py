@@ -18,13 +18,6 @@ arxiv=ArxivQueryRun(api_wrapper=arxiv_wrapper)
 api_wrapper=WikipediaAPIWrapper(top_k_results=1,doc_content_chars_max=200)
 wiki=WikipediaQueryRun(api_wrapper=api_wrapper)
 
-search = Tool(
-    name="Search",
-    func=serpAPI.run,
-    description="Use this to answer questions from Google search"
-)
-
-
 st.title("🔎 LangChain - Chat with search")
 """
 In this example, we're using `StreamlitCallbackHandler` to display the thoughts and actions of an agent in an interactive Streamlit app.
