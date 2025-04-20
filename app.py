@@ -10,7 +10,7 @@ from langchain_core.prompts import PromptTemplate, ChatPromptTemplate, MessagesP
 from langchain_core.runnables import Runnable
 from langchain_core.messages import HumanMessage, AIMessage, SystemMessage
 ## Code #####
-user_histories = {}
+
 system_prompt = f"""You are CodeGenie, an expert software engineer and coding tutor.
 Your job is to help users with code suggestions, debugging, and explanations across programming languages like Python, Java, C++, JavaScript, SQL, etc.
 
@@ -29,16 +29,16 @@ prompt_template = ChatPromptTemplate.from_messages([
 ])
 
 # Streamlit UI
-st.title("🤖 CodeGenie - Your Coding Assistant")
+st.title("🤖 Your Coding Assistant")
 
-st.markdown("""
+"""
 It's a code assistant that provides you with answers to your queries.  
 It helps users with code suggestions, debugging, and explanations  
 across languages like Python, Java, C++, JavaScript, SQL, etc.
-""")
+"""
 
 ## Sidebar for settings
-st.sidebar.title("Inputs")
+st.sidebar.title("INPUTS")
 user_name = st.sidebar.text_input("Enter your Name:")
 groq_api_key = st.sidebar.text_input("Enter your Groq API Key:",type="password")
 query = st.chat_input(placeholder="Write your query?")
@@ -55,6 +55,14 @@ if user_name and groq_api_key and query:
     st.session_state.messages.append({"role": "user", "content": query})
     st.chat_message("user").write(query)
     
+    # Reconstruct chat history (excluding initial assistant greeting)
+    chat_history = []
+    for msg in st.session_state.messages[1:]:
+        if msg["role"] == "user":
+            chat_history.append(HumanMessage(content=msg["content"]))
+        elif msg["role"] == "assistant":
+            chat_history.append(AIMessage(content=msg["content"]))
+    
     llm3 = ChatGroq(model="llama-3.3-70b-versatile",
                    groq_api_key=groq_api_key,
                     temperature = 0.2,  # for randomness, low- concise & accurate output, high - diverse and creative output
@@ -64,10 +72,6 @@ if user_name and groq_api_key and query:
                                 })
     
     chain: Runnable = prompt_template | llm3
-    
-    if user_name not in user_histories:
-        user_histories[user_name] = []
-    history = user_histories[user_name]
 
     with st.chat_message("assistant"):
         st_cb=StreamlitCallbackHandler(st.container(),expand_new_thoughts=False)
@@ -76,9 +80,6 @@ if user_name and groq_api_key and query:
         st.write(final_answer)
         st.session_state.messages.append({'role': 'assistant', "content": final_answer})
         
-        # Store conversation
-        history.append(HumanMessage(content = query))
-        history.append(AIMessage(content = final_answer))
 elif user_name and groq_api_key and not query:
     st.warning("Please type a coding question to get started.")
 elif not user_name or not groq_api_key:
