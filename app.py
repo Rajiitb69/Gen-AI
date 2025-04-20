@@ -47,6 +47,10 @@ for msg in st.session_state.messages:
 
 if prompt and api_key and SERPAPI_API_KEY:
     serpAPI = SerpAPIWrapper(serpapi_api_key=SERPAPI_API_KEY)
+    search = Tool(name="Search",
+                func=serpAPI.run,
+                description="Use this to answer questions from Google search"
+                )
     st.session_state.messages.append({"role":"user","content":prompt})
     st.chat_message("user").write(prompt)
 
