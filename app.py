@@ -11,22 +11,18 @@ from langchain_core.runnables import Runnable
 from langchain_core.messages import HumanMessage, AIMessage, SystemMessage
 ## Code #####
 
-system_prompt = f"""You are CodeGenie, an expert software engineer and coding tutor.
-Your job is to help users with code suggestions, debugging, and explanations across programming languages like Python, Java, C++, JavaScript, SQL, etc.
+system_prompt = """You are CodeGenie, an expert software engineer and coding tutor.
+You are currently helping a user named {username}.
+
+Your job is to help {username} with code suggestions, debugging, and explanations across programming languages like Python, Java, C++, JavaScript, SQL, etc.
 
 You always reply with:
 - Clear, concise answers
 - Relevant code blocks
 - Helpful comments
+- Address the user as {username}
 - Language as asked by the user
 - No extra text unless necessary"""
-
-# Prompt template
-prompt_template = ChatPromptTemplate.from_messages([
-    ("system", system_prompt),
-    MessagesPlaceholder(variable_name="chat_history"),
-    ("human", "{input}")
-])
 
 # Streamlit UI
 st.title("🤖 Your Coding Assistant")
@@ -43,15 +39,14 @@ user_name = st.sidebar.text_input("Enter your Name:")
 groq_api_key = st.sidebar.text_input("Enter your Groq API Key:",type="password")
 query = st.chat_input(placeholder="Write your query?")
 
-if "messages" not in st.session_state:
-    st.session_state["messages"]=[
-        {"role": "assistant", "content": "Hi, I'm a code assistant. How can I help you?"}
-    ]
-
-for msg in st.session_state.messages:
-    st.chat_message(msg["role"]).write(msg['content'])
-
 if user_name and groq_api_key and query:
+    if "messages" not in st.session_state:
+        st.session_state["messages"]=[
+            {"role": "assistant", "content": f"Hi {user_name}, I'm a code assistant. How can I help you?"}
+        ]
+    for msg in st.session_state.messages:
+        st.chat_message(msg["role"]).write(msg['content'])
+        
     st.session_state.messages.append({"role": "user", "content": query})
     st.chat_message("user").write(query)
     
@@ -62,6 +57,13 @@ if user_name and groq_api_key and query:
             chat_history.append(HumanMessage(content=msg["content"]))
         elif msg["role"] == "assistant":
             chat_history.append(AIMessage(content=msg["content"]))
+
+    # Prompt template with username
+    prompt_template = ChatPromptTemplate.from_messages([
+        ("system", system_prompt),
+        MessagesPlaceholder(variable_name="chat_history"),
+        ("human", "{input}")
+    ]).partial(username=user_name)
     
     llm3 = ChatGroq(model="llama-3.3-70b-versatile",
                    groq_api_key=groq_api_key,
