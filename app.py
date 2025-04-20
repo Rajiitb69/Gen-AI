@@ -1,63 +1,86 @@
 import streamlit as st
-from langchain_groq import ChatGroq
-from langchain_community.utilities import ArxivAPIWrapper,WikipediaAPIWrapper
-from langchain_community.tools import ArxivQueryRun,WikipediaQueryRun
-from langchain_community.utilities import SerpAPIWrapper
-from langchain_community.tools import Tool
-from langchain.agents import initialize_agent,AgentType
-from langchain.callbacks import StreamlitCallbackHandler
+import numpy as np
 import os
-from dotenv import load_dotenv
-## Code
-####
+import re
 
-## Arxiv and wikipedia Tools
-arxiv_wrapper=ArxivAPIWrapper(top_k_results=1, doc_content_chars_max=200)
-arxiv=ArxivQueryRun(api_wrapper=arxiv_wrapper)
+from langchain_groq import ChatGroq
 
-api_wrapper=WikipediaAPIWrapper(top_k_results=1,doc_content_chars_max=200)
-wiki=WikipediaQueryRun(api_wrapper=api_wrapper)
+from langchain.chains.combine_documents import create_stuff_documents_chain
+from langchain_core.prompts import PromptTemplate, ChatPromptTemplate, MessagesPlaceholder
+from langchain_core.runnables import Runnable
+from langchain_core.messages import HumanMessage, AIMessage, SystemMessage
+## Code #####
+user_histories = {}
+system_prompt = f"""You are CodeGenie, an expert software engineer and coding tutor.
+Your job is to help users with code suggestions, debugging, and explanations across programming languages like Python, Java, C++, JavaScript, SQL, etc.
 
-st.title("🔎 LangChain - Chat with search")
+You always reply with:
+- Clear, concise answers
+- Relevant code blocks
+- Helpful comments
+- Language as asked by the user
+- No extra text unless necessary"""
+
+# Prompt template
+prompt_template = ChatPromptTemplate.from_messages([
+    ("system", system_prompt),
+    MessagesPlaceholder(variable_name="chat_history"),
+    ("human", "{input}")
+])
+
+
+
+st.title("🔎 LangChain - Code-Assistant)
 """
-In this example, we're using `StreamlitCallbackHandler` to display the thoughts and actions of an agent in an interactive Streamlit app.
-Try more LangChain 🤝 Streamlit Agent examples at [github.com/langchain-ai/streamlit-agent](https://github.com/langchain-ai/streamlit-agent).
+It's a code assistant that provides you with answers to your queries. 
+It helps users with code suggestions, debugging, and explanations 
+across programming languages like Python, Java, C++, JavaScript, SQL, etc.
+
 """
 
 ## Sidebar for settings
-st.sidebar.title("Settings")
-api_key=st.sidebar.text_input("Enter your Groq API Key:",type="password")
-SERPAPI_API_KEY=st.sidebar.text_input("Enter your SERPAPI API KEY:",type="password")
-prompt = st.chat_input(placeholder="What is machine learning?")
+st.sidebar.title("Inputs")
+user_name = st.sidebar.text_input("Enter your Name:")
+groq_api_key = st.sidebar.text_input("Enter your Groq API Key:",type="password")
+query = st.chat_input(placeholder="What is machine learning?")
 
 if "messages" not in st.session_state:
     st.session_state["messages"]=[
-        {"role":"assisstant","content":"Hi,I'm a chatbot who can search the web. How can I help you?"}
+        {"role": "assistant", "content": "Hi, I'm a code assistant. How can I help you?"}
     ]
 
 for msg in st.session_state.messages:
     st.chat_message(msg["role"]).write(msg['content'])
 
-if prompt and api_key and SERPAPI_API_KEY:
-    serpAPI = SerpAPIWrapper(serpapi_api_key=SERPAPI_API_KEY)
-    search = Tool(name="Search",
-                func=serpAPI.run,
-                description="Use this to answer questions from Google search"
-                )
-    st.session_state.messages.append({"role":"user","content":prompt})
-    st.chat_message("user").write(prompt)
+if query and groq_api_key:
+    st.session_state.messages.append({"role": "user", "content": query})
+    st.chat_message("user").write(query)
+    
+    llm3 = ChatGroq(model="llama-3.3-70b-versatile",
+                   groq_api_key=groq_api_key,
+                    temperature = 0.2,  # for randomness, low- concise & accurate output, high - diverse and creative output
+                  max_tokens = 300,   # Short/long output responses (control length)
+                    model_kwargs={
+                               "top_p" : 0.5,        # high - diverse and creative output
+                                })
+    
+    chain: Runnable = prompt_template | llm3
 
-    llm=ChatGroq(groq_api_key=api_key,model_name="Llama3-8b-8192",streaming=True)
-    tools=[search,arxiv,wiki]
-
-    search_agent=initialize_agent(tools=tools,
-                                  llm=llm,
-                                  agent=AgentType.ZERO_SHOT_REACT_DESCRIPTION,
-                                  handling_parsing_errors=True)
+    # Code assistant function
+    def code_assistant_v1(user_name: str, user_input: str) -> str:
+      # Get or initialize history for this user
+      if user_name not in user_histories:
+          user_histories[user_name] = []
+    
+      history = user_histories[user_name]
 
     with st.chat_message("assistant"):
         st_cb=StreamlitCallbackHandler(st.container(),expand_new_thoughts=False)
-        response=search_agent.run(st.session_state.messages,callbacks=[st_cb])
+        response=chain.invoke({"input": st.session_state.messages,"chat_history": history},callbacks=[st_cb])
         st.session_state.messages.append({'role':'assistant',"content":response})
         st.write(response)
+        
+        # Store conversation
+        history.append(HumanMessage(content=user_input))
+        history.append(AIMessage(content=response.content if hasattr(response, "content") else response))
 
