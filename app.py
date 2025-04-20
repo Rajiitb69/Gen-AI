@@ -2,7 +2,7 @@ import streamlit as st
 import numpy as np
 import os
 import re
-
+from langchain.callbacks import StreamlitCallbackHandler
 from langchain_groq import ChatGroq
 
 from langchain.chains.combine_documents import create_stuff_documents_chain
@@ -42,7 +42,7 @@ across programming languages like Python, Java, C++, JavaScript, SQL, etc.
 st.sidebar.title("Inputs")
 user_name = st.sidebar.text_input("Enter your Name:")
 groq_api_key = st.sidebar.text_input("Enter your Groq API Key:",type="password")
-query = st.chat_input(placeholder="What is machine learning?")
+query = st.chat_input(placeholder="Write your query?")
 
 if "messages" not in st.session_state:
     st.session_state["messages"]=[
