@@ -1,7 +1,9 @@
 import streamlit as st
 from langchain_groq import ChatGroq
 from langchain_community.utilities import ArxivAPIWrapper,WikipediaAPIWrapper
-from langchain_community.tools import ArxivQueryRun,WikipediaQueryRun,DuckDuckGoSearchRun
+from langchain_community.tools import ArxivQueryRun,WikipediaQueryRun
+from langchain_community.utilities import SerpAPIWrapper
+from langchain_community.tools import Tool
 from langchain.agents import initialize_agent,AgentType
 from langchain.callbacks import StreamlitCallbackHandler
 import os
@@ -16,7 +18,11 @@ arxiv=ArxivQueryRun(api_wrapper=arxiv_wrapper)
 api_wrapper=WikipediaAPIWrapper(top_k_results=1,doc_content_chars_max=200)
 wiki=WikipediaQueryRun(api_wrapper=api_wrapper)
 
-search=DuckDuckGoSearchRun(name="Search")
+search = Tool(
+    name="Search",
+    func=serpAPI.run,
+    description="Use this to answer questions from Google search"
+)
 
 
 st.title("🔎 LangChain - Chat with search")
@@ -28,6 +34,8 @@ Try more LangChain 🤝 Streamlit Agent examples at [github.com/langchain-ai/str
 ## Sidebar for settings
 st.sidebar.title("Settings")
 api_key=st.sidebar.text_input("Enter your Groq API Key:",type="password")
+SERPAPI_API_KEY=st.sidebar.text_input("Enter your SERPAPI API KEY:",type="password")
+prompt = st.chat_input(placeholder="What is machine learning?")
 
 if "messages" not in st.session_state:
     st.session_state["messages"]=[
@@ -37,14 +45,18 @@ if "messages" not in st.session_state:
 for msg in st.session_state.messages:
     st.chat_message(msg["role"]).write(msg['content'])
 
-if prompt:=st.chat_input(placeholder="What is machine learning?"):
+if prompt and api_key and SERPAPI_API_KEY:
+    serpAPI = SerpAPIWrapper(serpapi_api_key=SERPAPI_API_KEY)
     st.session_state.messages.append({"role":"user","content":prompt})
     st.chat_message("user").write(prompt)
 
     llm=ChatGroq(groq_api_key=api_key,model_name="Llama3-8b-8192",streaming=True)
     tools=[search,arxiv,wiki]
 
-    search_agent=initialize_agent(tools,llm,agent=AgentType.ZERO_SHOT_REACT_DESCRIPTION,handling_parsing_errors=True)
+    search_agent=initialize_agent(tools=tools,
+                                  llm=llm,
+                                  agent=AgentType.ZERO_SHOT_REACT_DESCRIPTION,
+                                  handling_parsing_errors=True)
 
     with st.chat_message("assistant"):
         st_cb=StreamlitCallbackHandler(st.container(),expand_new_thoughts=False)
