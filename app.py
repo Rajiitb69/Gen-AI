@@ -68,7 +68,7 @@ text_summarization_header = """
     Summarize articles, emails, reports, or any text in seconds. 
     Just paste the content, and get a clear, concise summary! 💡
     """
-
+groq_api_key = st.secrets["GROQ_API_KEY"]
 def get_prompt(tool, user_name):
     if tool == "💻 Code Assistant":
         title = code_assistant_title
@@ -87,9 +87,49 @@ def get_prompt(tool, user_name):
         system_prompt = text_summarization_prompt
     output_dict = {"title":title, "header":header, "assistant_content":assistant_content, "system_prompt":system_prompt}
     return output_dict
+    
+def data_analysis_uploader():
+    st.set_page_config(page_title="Excel/CSV Analyst with LLM", layout="wide")
+    st.title("📁 Upload your Data File")
+
+    if "data" not in st.session_state:
+        st.session_state.data = None
+        st.session_state.file_name = ""
+        st.session_state.analysis_ready = False
+    uploaded_file = st.file_uploader("Upload your Excel or CSV file", type=["xlsx", "xls", "csv"])
+    if uploaded_file and st.button("Load File for Analysis"):
+        try:
+            with st.spinner("🔄 Uploading..."):
+                if uploaded_file.name.endswith(".csv"):
+                    df = pd.read_csv(uploaded_file)
+                    sheet_name = "CSV Data"
+                else:
+                    xls = pd.read_excel(uploaded_file, sheet_name=None)
+                    sheet_names = list(xls.keys())
+                    sheet_name = sheet_names[0]  # Default to first sheet
+                    df = xls[sheet_name]
+        
+                st.session_state.data = df
+                st.session_state.file_name = uploaded_file.name
+                st.session_state.analysis_ready = True
+                st.success(f"Loaded '{uploaded_file.name}' successfully.")
+                st.session_state.step = 'main'
+                st.rerun()
+        except Exception as e:
+                st.error(f"Failed to load file: {e}")
+    elif not uploaded_file:
+        st.error(f"Please upload your file")
+
+def generic_uploader():
+    user_name = st.session_state.user_name.title()
+    selection = st.session_state.selected_screen
+    st.markdown(f"""Hi {user_name}, you have selected {selection} tool So no need to upload anything""")
+    if st.button("Go ahead"):
+        st.session_state.step = 'main'
+        st.rerun()
+    
 
 def get_layout(tool):
-    groq_api_key = st.session_state.groq_api_key
     user_name = st.session_state.user_name.title()
     logout_sidebar(user_name)
     output_dict = get_prompt(tool, user_name)
@@ -150,8 +190,6 @@ if 'step' not in st.session_state:
     st.session_state.step = 'login'
 if 'user_name' not in st.session_state:
     st.session_state.user_name = ''
-if 'groq_api_key' not in st.session_state:
-    st.session_state.groq_api_key = ''
 if 'selected_screen' not in st.session_state:
     st.session_state.selected_screen = ''
 
@@ -206,35 +244,25 @@ def greeting_screen():
     st.markdown("---")
     # Select screen
     selected = st.selectbox("📂 Choose a tool or section:",
-            ["💻 Code Assistant", "🧮 Math Assistant", "📝 Text Summarization", "🔎 RAG-based Chatbot", "📺 Youtube/Website Content Summarization"])
+            ["📊 Excel Analyser", "💻 Code Assistant", "🧮 Math Assistant", "📝 Text Summarization", "🔎 RAG-based Chatbot", "📺 Youtube/Website Content Summarization"])
     
     st.session_state.selected_screen = selected
     # Go button
     col1, col2, col3 = st.columns([1, 2, 1])
     with col2:
         if st.button("🚀 Let's Go"):
-            st.session_state.step = 'ask_api_key'
+            st.session_state.step = 'upload'
             st.rerun()
 
-def api_key_screen():
-    st.title("🔑 Enter Your GROQ API Key")
-    groq_api_key = st.text_input("GROQ API Key", type="password")
+def upload_screen():
     user = st.session_state.user_name.title()
+    selection = st.session_state.get("selected_screen", "📊 Excel Analyser")
     logout_sidebar(user)
-    if st.button("Submit"):
-        if not groq_api_key.strip():
-            st.error("Please enter a valid API key.")
-            return
-        with st.spinner("🔄 Validating your GROQ API key..."):
-            try:
-                llm = ChatGroq(model="llama-3.3-70b-versatile", groq_api_key=groq_api_key)
-                _ = llm.invoke([HumanMessage(content="Hello!")])
-                st.session_state.groq_api_key = groq_api_key.strip()
-                st.session_state.step = 'main'
-                st.success("API key validated successfully! 🎉")
-                st.rerun()
-            except Exception as e:
-                st.error("❌ Invalid GROQ API key")
+    if selection == "📊 Excel Analyser":
+        data_analysis_uploader()
+    else:
+        generic_uploader()
+        
 
 # Streamlit UI                
 def code_assistant_screen(selection):
@@ -243,33 +271,30 @@ def code_assistant_screen(selection):
 def math_assistant_screen(selection):
     get_layout(selection)
 
-def RAG_based_chatbot_screen(selection):
-    groq_api_key = st.session_state.groq_api_key
-    user_name = st.session_state.user_name.title()
-    logout_sidebar(user_name)
-    st.title("🤖 Your RAG Based Chatbot")
-
 def text_summarization_screen(selection):
     get_layout(selection)
 
+def RAG_based_chatbot_screen(selection):
+    logout_sidebar(user_name)
+    st.title("🤖 Your RAG Based Chatbot")
+
 def content_summarization_screen(selection):
-    st.subheader("📺 Youtube/Website Content Summarization")
-    groq_api_key = st.session_state.groq_api_key
-    user_name = st.session_state.user_name.title()
     logout_sidebar(user_name)
     st.title("🤖 Your Content Summarization Assistant")
     
 # Dispatcher to selected screen
 def main_router():
-    selection = st.session_state.get("selected_screen", "💻 Code Assistant")
-    if selection == "💻 Code Assistant":
+    selection = st.session_state.get("selected_screen", "📊 Excel Analyser")
+    if selection == "📊 Excel Analyser":
+        code_assistant_screen(selection)
+    elif selection == "💻 Code Assistant":
         code_assistant_screen(selection)
     elif selection == "🧮 Math Assistant":
         math_assistant_screen(selection)
-    elif selection == "🔎 RAG-based Chatbot":
-        RAG_based_chatbot_screen(selection)
     elif selection == "📝 Text Summarization":
         text_summarization_screen(selection)
+    elif selection == "🔎 RAG-based Chatbot":
+        RAG_based_chatbot_screen(selection)
     elif selection == "📺 Youtube/Website Content Summarization":
         math_assistant_screen(selection)
     else:
@@ -281,8 +306,8 @@ def run_app():
         login_screen()
     elif st.session_state.step == 'greeting':
         greeting_screen()
-    elif st.session_state.step == 'ask_api_key':
-        api_key_screen()
+    elif st.session_state.step == 'upload':
+        upload_screen()
     elif st.session_state.step == 'main':
         main_router()
 
