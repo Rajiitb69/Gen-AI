@@ -1,5 +1,6 @@
 import streamlit as st
 import numpy as np
+import pandas as pd
 import os
 import re
 from langchain.callbacks.streamlit import StreamlitCallbackHandler
@@ -123,7 +124,12 @@ def data_analysis_uploader():
 def generic_uploader():
     user_name = st.session_state.user_name.title()
     selection = st.session_state.selected_screen
-    st.markdown(f"""Hi {user_name}, you have selected {selection} tool So no need to upload anything""")
+    # Stylish greeting
+    st.markdown(f"""
+        <div style='text-align: center;'>
+            <h4 style='color:#4CAF50;'>👋 Hi {user_name}!</h4>
+            <p style='font-size:17px;'>you have selected {selection} tool So no need to upload anything</p>
+        </div>""", unsafe_allow_html=True)
     if st.button("Go ahead"):
         st.session_state.step = 'main'
         st.rerun()
