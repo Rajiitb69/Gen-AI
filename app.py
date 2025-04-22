@@ -187,9 +187,16 @@ def get_layout(tool):
             df = st.session_state.data
             st.chat_message("assistant").write("Here's a quick preview of your uploaded data:")
             st.chat_message("assistant").dataframe(df.head())
-    
-    for msg in st.session_state.messages:
-        st.chat_message(msg["role"]).write(msg['content'])
+    if tool == "📊 Excel Analyser":
+        for msg in st.session_state.messages:
+            if msg["role"] == "user":
+                st.chat_message(msg["role"]).write(msg['content'])
+            else:
+                assistant_code = "\n".join(msg["content"])
+                st.code(assistant_code, language="python")
+    else:    
+        for msg in st.session_state.messages:
+            st.chat_message(msg["role"]).write(msg['content'])
     
     if user_name!='' and groq_api_key and query:
             
