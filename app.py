@@ -272,8 +272,12 @@ def get_layout(tool):
 
     if "messages" not in st.session_state:
         st.session_state["messages"]=[
-            {"role": "assistant", "content": output_dict['assistant_content']}
-        ]
+            {"role": "assistant", "content": output_dict['assistant_content']}]
+        if tool == "📊 Excel Analyser":
+            df = st.session_state.data
+            st.chat_message("assistant").write("Here's a quick preview of your uploaded data:")
+            st.chat_message("assistant").dataframe(df.head())
+    
     for msg in st.session_state.messages:
         st.chat_message(msg["role"]).write(msg['content'])
     
@@ -291,11 +295,20 @@ def get_layout(tool):
                 chat_history.append(AIMessage(content=msg["content"]))
     
         # Prompt template with username
-        prompt_template = ChatPromptTemplate.from_messages([
+        if tool == "📊 Excel Analyser":
+            df = st.session_state.data
+            prompt_template = ChatPromptTemplate.from_messages([
             ("system", output_dict['system_prompt']),
             MessagesPlaceholder(variable_name="chat_history"),
             ("human", "{input}")
-        ]).partial(username=user_name, query=query)
+            ]).partial(username=user_name, query=query, columns=list(df.columns),
+                        head=df.head().to_string(index=False))
+        else:
+            prompt_template = ChatPromptTemplate.from_messages([
+                ("system", output_dict['system_prompt']),
+                MessagesPlaceholder(variable_name="chat_history"),
+                ("human", "{input}")
+            ]).partial(username=user_name, query=query)
         
         llm3 = ChatGroq(model="llama-3.3-70b-versatile",
                        groq_api_key=groq_api_key,
@@ -310,10 +323,36 @@ def get_layout(tool):
         with st.chat_message("assistant"):
             st_cb=StreamlitCallbackHandler(st.container(),expand_new_thoughts=False)
             response=chain.invoke({"input": query,"chat_history": chat_history}, callbacks=[st_cb])
-            final_answer = response.content if hasattr(response, "content") else str(response)
+            if tool == "📊 Excel Analyser":
+                final_answer = response.content.strip('```python').strip('`').strip('python')
+            else:
+                final_answer = response.content if hasattr(response, "content") else str(response)
             st.write(final_answer)
             st.session_state.messages.append({'role': 'assistant', "content": final_answer})
+        if tool == "📊 Excel Analyser":
+            # Safe execution (use caution in production)
+            try:
+                df_numeric = df.copy()
+                local_vars = {'df': df_numeric, 'pd': pd}
+                exec(code, {}, local_vars)
+                result = local_vars.get('result')
             
+                if result is not None:
+                    st.write("### Result")
+                    if isinstance(result, pd.DataFrame):
+                        st.dataframe(result)
+                    elif isinstance(result, str) and result.endswith(('.xlsx', '.csv')) and os.path.exists(result):
+                        with open(result, 'rb') as f:
+                            st.download_button("📥 Download Analysis File", f, file_name=os.path.basename(result))
+                    else:
+                        st.write(result)
+            except IndexError as e:
+                st.error(f"No matching records found. ({e})")
+            except SyntaxError as e:
+                st.error(f"Syntax error in generated code: {e}")
+            except Exception as e:
+                st.error(f"Error running code: {e}")
+                    
     elif user_name!='' and groq_api_key and not query:
         st.warning("Please type a query to get started.")
 
@@ -398,7 +437,7 @@ def upload_screen():
 
 # Streamlit UI                
 def excel_analyser_screen(selection):
-    get_excel_analyser_layout(selection)
+    get_layout(selection)
 
 def code_assistant_screen(selection):
     get_layout(selection)
