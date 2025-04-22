@@ -231,8 +231,8 @@ def get_excel_analyser_layout(tool):
             st_cb=StreamlitCallbackHandler(st.container(),expand_new_thoughts=False)
             response=chain.invoke({"input": query,"chat_history": chat_history}, callbacks=[st_cb])
             code = response.content.strip('```python').strip('`').strip('python')
-            st.code(code, language="python")
-            # st.write(code)
+            # st.code(code, language="python")
+            st.write(code)
             st.session_state.messages.append({'role': 'assistant', "content": code})
         
         # Safe execution (use caution in production)
