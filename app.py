@@ -71,9 +71,9 @@ text_summarization_header = """
     """
 Excel_Analyser_prompt = """
         You are a data analyst helping a user named {username}. The user uploaded a data file with the following schema:
-        Columns: {list(df.columns)}
+        Columns: {columns}
         First 5 rows:
-        {df.head().to_string(index=False)}
+        {head}
 
         User question: {query}
         Write Python Pandas code to answer the question. Only return code. Don't explain.
@@ -191,7 +191,8 @@ def get_excel_analyser_layout(tool):
             ("system", output_dict['system_prompt']),
             MessagesPlaceholder(variable_name="chat_history"),
             ("human", "{input}")
-        ]).partial(username=user_name, query=query, df=df)
+        ]).partial(username=user_name, query=query, columns=list(df.columns),
+                    head=df.head().to_string(index=False))
         
         llm3 = ChatGroq(model="llama-3.3-70b-versatile",
                        groq_api_key=groq_api_key,
