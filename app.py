@@ -86,6 +86,7 @@ When returning results:
 - Always assign the final result to a variable named `result`.
 - If the result is a Series (e.g., from `value_counts()`), convert it to a DataFrame using `.to_frame('Count').reset_index()`.
 - Do not print or explain anything. Only return Python Pandas code.
+- Add comment before code
 
 The uploaded data has the following structure:
 - Columns: {columns}
