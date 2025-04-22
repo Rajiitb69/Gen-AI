@@ -181,9 +181,8 @@ def get_layout(tool):
             {"role": "assistant", "content": output_dict['assistant_content']}]
         if tool == "📊 Excel Analyser":
             df = st.session_state.data
-            st.session_state.messages.append({"role": "assistant", "content": "Here's a quick preview of your uploaded data:"})
-            st.session_state.messages.append({"role": "assistant", "content": df.head()})
-            # st.chat_message("assistant").dataframe(df.head())
+            st.chat_message("assistant").write("Here's a quick preview of your uploaded data:")
+            st.chat_message("assistant").dataframe(df.head())
     
     for msg in st.session_state.messages:
         st.chat_message(msg["role"]).write(msg['content'])
@@ -232,8 +231,8 @@ def get_layout(tool):
             response=chain.invoke({"input": query,"chat_history": chat_history}, callbacks=[st_cb])
             if tool == "📊 Excel Analyser":
                 final_answer = response.content.strip('```python').strip('`').strip('python') if hasattr(response, "content") else str(response.strip('```python').strip('`').strip('python'))
-                st.code(final_answer, language="python")
-                # st.write(final_answer)
+                # st.code(final_answer, language="python")
+                st.write(final_answer)
             else:
                 final_answer = response.content if hasattr(response, "content") else str(response)
                 st.write(final_answer)
