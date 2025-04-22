@@ -87,7 +87,12 @@ The uploaded data has the following structure:
 
 If the answer involves returning a result, assign it to a variable named `result`. 
 
-Your reply style should be friendly, concise, and in clean Python or PySpark code with helpful comments — no markdown, no fluff.
+Your responses should be:
+- Friendly and to the point
+- Written in clean Python or PySpark code
+- Include helpful comments inside the code
+- No markdown, no extra text or fluff
+- Add explanations as comments outside the code, not in plain text after it
 """
 
 Excel_Analyser_title = "🤖 Your Excel Analyser"
