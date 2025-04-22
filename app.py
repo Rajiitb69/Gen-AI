@@ -69,6 +69,24 @@ text_summarization_header = """
     Summarize articles, emails, reports, or any text in seconds. 
     Just paste the content, and get a clear, concise summary! 💡
     """
+Excel_Analyser_prompt = f"""
+        You are a data analyst helping a user named {username}. The user uploaded a data file with the following schema:
+        Columns: {list(df.columns)}
+        First 5 rows:
+        {df.head().to_string(index=False)}
+
+        User question: {query}
+        Write Python Pandas code to answer the question. Only return code. Don't explain.
+        If the result needs to be shown, assign it to a variable named 'result'.
+        Please follow these guidelines:
+        Keep your tone helpful and friendly (start with phrases like "Great question!", "Sure!", etc.).
+        """
+Excel_Analyser_title = "🤖 Your Excel Analyser"
+Excel_Analyser_header = """
+    Welcome to your personal **Excel Analyser**!
+    Generate the code in seconds. 
+    Just paste the query, and get code! 💡
+    """
 groq_api_key = st.secrets["GROQ_API_KEY"]
 def get_prompt(tool, user_name):
     if tool == "💻 Code Assistant":
@@ -86,6 +104,11 @@ def get_prompt(tool, user_name):
         header = text_summarization_header
         assistant_content = f"Hi {user_name}, I'm a Text Summarizer. How can I help you?"
         system_prompt = text_summarization_prompt
+    elif tool == "📊 Excel Analyser":
+        title = Excel_Analyser_title
+        header = Excel_Analyser_header
+        assistant_content = f"Hi {user_name}, I'm a Excel Analyser. How can I help you?"
+        system_prompt = Excel_Analyser_prompt
     output_dict = {"title":title, "header":header, "assistant_content":assistant_content, "system_prompt":system_prompt}
     return output_dict
     
@@ -133,7 +156,74 @@ def generic_uploader():
     if st.button("Go ahead"):
         st.session_state.step = 'main'
         st.rerun()
+
+def get_excel_analyser_layout(tool):
+    user_name = st.session_state.user_name.title()
+    logout_sidebar(user_name)
+    output_dict = get_prompt(tool, user_name)
+    st.title(output_dict['title'])
+    output_dict['header']
     
+    query = st.chat_input(placeholder="Write your query?")
+
+    if "messages" not in st.session_state:
+        st.session_state["messages"]=[
+            {"role": "assistant", "content": output_dict['assistant_content']}
+        ]
+    for msg in st.session_state.messages:
+        st.chat_message(msg["role"]).write(msg['content'])
+    
+    if user_name!='' and query:
+        df = st.session_state.data
+        st.session_state.messages.append({"role": "user", "content": query})
+        st.chat_message("user").write(query)
+        
+        # Reconstruct chat history (excluding initial assistant greeting)
+        chat_history = []
+        for msg in st.session_state.messages[1:]:
+            if msg["role"] == "user":
+                chat_history.append(HumanMessage(content=msg["content"]))
+            elif msg["role"] == "assistant":
+                chat_history.append(AIMessage(content=msg["content"]))
+    
+        # Prompt template with username
+        prompt_template = ChatPromptTemplate.from_messages([
+            ("system", output_dict['system_prompt']),
+            MessagesPlaceholder(variable_name="chat_history"),
+            ("human", "{input}")
+        ]).partial(username=user_name)
+        
+        llm3 = ChatGroq(model="llama-3.3-70b-versatile",
+                       groq_api_key=groq_api_key,
+                        temperature = 0.2,  # for randomness, low- concise & accurate output, high - diverse and creative output
+                      max_tokens = 600,   # Short/long output responses (control length)
+                        model_kwargs={
+                                   "top_p" : 0.5,        # high - diverse and creative output
+                                    })
+        
+        chain: Runnable = prompt_template | llm3
+    
+        with st.chat_message("assistant"):
+            st_cb=StreamlitCallbackHandler(st.container(),expand_new_thoughts=False)
+            response=chain.invoke({"input": query,"chat_history": chat_history}, callbacks=[st_cb])
+            code = response.content.strip('`python').strip('`')
+            st.code(code, language="python")
+            # st.write(final_answer)
+            st.session_state.messages.append({'role': 'assistant', "content": code})
+        
+        # Safe execution (use caution in production)
+        try:
+            local_vars = {'df': df.copy()}
+            exec(code, {}, local_vars)
+            result = local_vars.get('result')
+            if result is not None:
+                st.write("### Result")
+                st.dataframe(result if isinstance(result, pd.DataFrame) else pd.DataFrame([result]))
+        except Exception as e:
+            st.error(f"Error running code: {e}")
+            
+    elif user_name!='' and not query:
+        st.warning("Please type a query to get started.")
 
 def get_layout(tool):
     user_name = st.session_state.user_name.title()
@@ -271,6 +361,9 @@ def upload_screen():
         
 
 # Streamlit UI                
+def excel_analyser_screen(selection):
+    get_excel_analyser_layout(selection)
+
 def code_assistant_screen(selection):
     get_layout(selection)
 
@@ -292,7 +385,7 @@ def content_summarization_screen(selection):
 def main_router():
     selection = st.session_state.get("selected_screen", "📊 Excel Analyser")
     if selection == "📊 Excel Analyser":
-        code_assistant_screen(selection)
+        excel_analyser_screen(selection)
     elif selection == "💻 Code Assistant":
         code_assistant_screen(selection)
     elif selection == "🧮 Math Assistant":
