@@ -239,16 +239,15 @@ def get_excel_analyser_layout(tool):
                         st.download_button("📥 Download Analysis File", f, file_name=os.path.basename(result))
                 else:
                     st.write(result)
-
-except IndexError as e:
-    st.error(f"No matching records found. ({e})")
-except SyntaxError as e:
-    st.error(f"Syntax error in generated code: {e}")
-except Exception as e:
-    st.error(f"Error running code: {e}")
-            
-    elif user_name!='' and not query:
-        st.warning("Please type a query to get started.")
+        except IndexError as e:
+            st.error(f"No matching records found. ({e})")
+        except SyntaxError as e:
+            st.error(f"Syntax error in generated code: {e}")
+        except Exception as e:
+            st.error(f"Error running code: {e}")
+                    
+            elif user_name!='' and not query:
+                st.warning("Please type a query to get started.")
 
 def get_layout(tool):
     user_name = st.session_state.user_name.title()
