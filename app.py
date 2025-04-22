@@ -229,11 +229,23 @@ def get_excel_analyser_layout(tool):
             code = code.replace("errors='ignore'", "errors='coerce'")
             exec(code, {}, local_vars)
             result = local_vars.get('result')
+        
             if result is not None:
                 st.write("### Result")
-                st.dataframe(result if isinstance(result, pd.DataFrame) else pd.DataFrame([result]))
-        except Exception as e:
-            st.error(f"Error running code: {e}")
+                if isinstance(result, pd.DataFrame):
+                    st.dataframe(result)
+                elif isinstance(result, str) and result.endswith(('.xlsx', '.csv')) and os.path.exists(result):
+                    with open(result, 'rb') as f:
+                        st.download_button("📥 Download Analysis File", f, file_name=os.path.basename(result))
+                else:
+                    st.write(result)
+
+except IndexError as e:
+    st.error(f"No matching records found. ({e})")
+except SyntaxError as e:
+    st.error(f"Syntax error in generated code: {e}")
+except Exception as e:
+    st.error(f"Error running code: {e}")
             
     elif user_name!='' and not query:
         st.warning("Please type a query to get started.")
