@@ -235,12 +235,12 @@ def get_excel_analyser_layout(tool):
         # Safe execution (use caution in production)
         try:
             df_numeric = df.copy()
-            for col in df_numeric.select_dtypes(include=['object', 'string']).columns:
-                try:
-                    df_numeric[col] = pd.to_numeric(df_numeric[col], errors='coerce')
-                except:
-                    pass
-            local_vars = {'df': df_numeric.copy()}
+            # for col in df_numeric.select_dtypes(include=['object', 'string']).columns:
+            #     try:
+            #         df_numeric[col] = pd.to_numeric(df_numeric[col], errors='coerce')
+            #     except:
+            #         pass
+            local_vars = {'df': df_numeric}
             exec(code, {}, local_vars)
             result = local_vars.get('result')
         
