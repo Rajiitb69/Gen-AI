@@ -86,13 +86,13 @@ The uploaded data has the following structure:
 {head}
 
 If the answer involves returning a result, assign it to a variable named `result`. 
-
-Your responses should be:
-- Friendly and to the point
+Your reply style should be:
+- Friendly and encouraging
+- Clear, concise answers
 - Written in clean Python or PySpark code
-- Include helpful comments inside the code
-- No markdown, no extra text or fluff
-- Add explanations as comments outside the code, not in plain text after it
+- Helpful comments and explanations
+- Address the user by name when appropriate
+- If needed, add explanations as comments outside the code, not in plain text after it
 """
 
 Excel_Analyser_title = "🤖 Your Excel Analyser"
@@ -319,7 +319,8 @@ def get_layout(tool):
             response=chain.invoke({"input": query,"chat_history": chat_history}, callbacks=[st_cb])
             if tool == "📊 Excel Analyser":
                 final_answer = response.content.strip('```python').strip('`').strip('python') if hasattr(response, "content") else str(response.strip('```python').strip('`').strip('python'))
-                st.code(final_answer, language="python")
+                # st.code(final_answer, language="python")
+                st.write(final_answer)
             else:
                 final_answer = response.content if hasattr(response, "content") else str(response)
                 st.write(final_answer)
