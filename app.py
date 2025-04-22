@@ -89,7 +89,7 @@ def get_prompt(tool, user_name):
     return output_dict
     
 def data_analysis_uploader():
-    st.set_page_config(page_title="Excel/CSV Analyst with LLM", layout="wide")
+    st.markdown("Welcome to Excel/CSV Analyzer")
     st.title("📁 Upload your Data File")
 
     if "data" not in st.session_state:
