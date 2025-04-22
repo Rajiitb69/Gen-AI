@@ -3,6 +3,7 @@ seaborn
 scipy
 scikit-learn
 xgboost
+openpyxl
 langchain
 huggingface_hub
 langchain-community
