@@ -190,7 +190,7 @@ def get_excel_analyser_layout(tool):
         prompt_template = ChatPromptTemplate.from_messages([
             ("system", output_dict['system_prompt']),
             MessagesPlaceholder(variable_name="chat_history"),
-            ("human", "input")
+            ("human", "{input}")
         ]).partial(username=user_name, query=query, columns=list(df.columns),
                     head=df.head().to_string(index=False))
         
@@ -259,7 +259,7 @@ def get_layout(tool):
         prompt_template = ChatPromptTemplate.from_messages([
             ("system", output_dict['system_prompt']),
             MessagesPlaceholder(variable_name="chat_history"),
-            ("human", "input")
+            ("human", "{input}")
         ]).partial(username=user_name, query=query)
         
         llm3 = ChatGroq(model="llama-3.3-70b-versatile",
