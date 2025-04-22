@@ -334,7 +334,7 @@ def get_layout(tool):
             try:
                 df_numeric = df.copy()
                 local_vars = {'df': df_numeric, 'pd': pd}
-                exec(code, {}, local_vars)
+                exec(final_answer, {}, local_vars)
                 result = local_vars.get('result')
             
                 if result is not None:
