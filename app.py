@@ -180,8 +180,12 @@ def get_excel_analyser_layout(tool):
 
     if "messages" not in st.session_state:
         st.session_state["messages"]=[
-            {"role": "assistant", "content": output_dict['assistant_content']}
-        ]
+            {"role": "assistant", "content": output_dict['assistant_content']}]
+        df = st.session_state.data
+        st.chat_message("assistant").write(output_dict['assistant_content'])
+        st.chat_message("assistant").write("Here's a quick preview of your uploaded data:")
+        st.chat_message("assistant").dataframe(df.head())
+        
     for msg in st.session_state.messages:
         st.chat_message(msg["role"]).write(msg['content'])
     
