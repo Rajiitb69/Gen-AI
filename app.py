@@ -234,6 +234,7 @@ def get_excel_analyser_layout(tool):
         
         # Safe execution (use caution in production)
         try:
+            import pandas as pd
             df_numeric = df.copy()
             # for col in df_numeric.select_dtypes(include=['object', 'string']).columns:
             #     try:
