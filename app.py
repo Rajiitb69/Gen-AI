@@ -169,90 +169,6 @@ def generic_uploader():
         st.session_state.step = 'main'
         st.rerun()
 
-def get_excel_analyser_layout(tool):
-    user_name = st.session_state.user_name.title()
-    logout_sidebar(user_name)
-    output_dict = get_prompt(tool, user_name)
-    st.title(output_dict['title'])
-    output_dict['header']
-    
-    query = st.chat_input(placeholder="Write your query?")
-
-    if "messages" not in st.session_state:
-        st.session_state["messages"]=[
-            {"role": "assistant", "content": output_dict['assistant_content']}]
-        df = st.session_state.data
-        st.chat_message("assistant").write("Here's a quick preview of your uploaded data:")
-        st.chat_message("assistant").dataframe(df.head())
-        
-    for msg in st.session_state.messages:
-        st.chat_message(msg["role"]).write(msg['content'])
-    
-    if user_name!='' and query:
-        df = st.session_state.data
-        st.session_state.messages.append({"role": "user", "content": query})
-        st.chat_message("user").write(query)
-        
-        # Reconstruct chat history (excluding initial assistant greeting)
-        chat_history = []
-        for msg in st.session_state.messages[1:]:
-            if msg["role"] == "user":
-                chat_history.append(HumanMessage(content=msg["content"]))
-            elif msg["role"] == "assistant":
-                chat_history.append(AIMessage(content=msg["content"]))
-    
-        # Prompt template with username
-        prompt_template = ChatPromptTemplate.from_messages([
-            ("system", output_dict['system_prompt']),
-            MessagesPlaceholder(variable_name="chat_history"),
-            ("human", "{input}")
-        ]).partial(username=user_name, query=query, columns=list(df.columns),
-                    head=df.head().to_string(index=False))
-        
-        llm3 = ChatGroq(model="llama-3.3-70b-versatile",
-                       groq_api_key=groq_api_key,
-                        temperature = 0.2,  # for randomness, low- concise & accurate output, high - diverse and creative output
-                      max_tokens = 600,   # Short/long output responses (control length)
-                        model_kwargs={
-                                   "top_p" : 0.5,        # high - diverse and creative output
-                                    })
-        
-        chain: Runnable = prompt_template | llm3
-    
-        with st.chat_message("assistant"):
-            st_cb=StreamlitCallbackHandler(st.container(),expand_new_thoughts=False)
-            response=chain.invoke({"input": query,"chat_history": chat_history}, callbacks=[st_cb])
-            code = response.content.strip('```python').strip('`').strip('python')
-            # st.code(code, language="python")
-            st.write(code)
-            st.session_state.messages.append({'role': 'assistant', "content": code})
-        
-        # Safe execution (use caution in production)
-        try:
-            df_numeric = df.copy()
-            local_vars = {'df': df_numeric, 'pd': pd}
-            exec(code, {}, local_vars)
-            result = local_vars.get('result')
-        
-            if result is not None:
-                st.write("### Result")
-                if isinstance(result, pd.DataFrame):
-                    st.dataframe(result)
-                elif isinstance(result, str) and result.endswith(('.xlsx', '.csv')) and os.path.exists(result):
-                    with open(result, 'rb') as f:
-                        st.download_button("📥 Download Analysis File", f, file_name=os.path.basename(result))
-                else:
-                    st.write(result)
-        except IndexError as e:
-            st.error(f"No matching records found. ({e})")
-        except SyntaxError as e:
-            st.error(f"Syntax error in generated code: {e}")
-        except Exception as e:
-            st.error(f"Error running code: {e}")
-                    
-    elif user_name!='' and not query:
-        st.warning("Please type a query to get started.")
-
 def get_layout(tool):
     user_name = st.session_state.user_name.title()
     logout_sidebar(user_name)
@@ -317,8 +233,8 @@ def get_layout(tool):
             response=chain.invoke({"input": query,"chat_history": chat_history}, callbacks=[st_cb])
             if tool == "📊 Excel Analyser":
                 final_answer = response.content.strip('```python').strip('`').strip('python') if hasattr(response, "content") else str(response.strip('```python').strip('`').strip('python'))
-                # st.code(final_answer, language="python")
-                st.write(final_answer)
+                st.code(final_answer, language="python")
+                # st.write(final_answer)
             else:
                 final_answer = response.content if hasattr(response, "content") else str(response)
                 st.write(final_answer)
