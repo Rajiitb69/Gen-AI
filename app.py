@@ -85,11 +85,7 @@ The uploaded data has the following structure:
 - Sample rows:
 {head}
 
-If the answer involves returning a result, assign it to a variable named `result`.
-When returning results:
-- Always assign the final result to a variable named `result`.
-- Add comment before code
-- return only plain Python code without any markdown formatting
+If the answer involves returning a result, assign it to a variable named `result`. 
 
 Your reply style should be:
 - Friendly and encouraging (start with phrases like "Great question!", "Sure!", or "Let's walk through it...")
@@ -324,7 +320,7 @@ def get_layout(tool):
             st_cb=StreamlitCallbackHandler(st.container(),expand_new_thoughts=False)
             response=chain.invoke({"input": query,"chat_history": chat_history}, callbacks=[st_cb])
             if tool == "📊 Excel Analyser":
-                final_answer = response.content.strip('```python').strip('`').strip('python')
+                final_answer = response.content.strip('```python').strip('`').strip('python') if hasattr(response, "content") else str(response.strip('```python').strip('`').strip('python'))
             else:
                 final_answer = response.content if hasattr(response, "content") else str(response)
             st.write(final_answer)
