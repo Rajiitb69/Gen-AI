@@ -208,8 +208,8 @@ def get_excel_analyser_layout(tool):
             st_cb=StreamlitCallbackHandler(st.container(),expand_new_thoughts=False)
             response=chain.invoke({"input": query,"chat_history": chat_history}, callbacks=[st_cb])
             code = response.content.strip('`python').strip('`')
-            # st.code(code, language="python")
-            st.write(code)
+            st.code(code, language="python")
+            # st.write(code)
             st.session_state.messages.append({'role': 'assistant', "content": code})
         
         # Safe execution (use caution in production)
@@ -333,7 +333,7 @@ def greeting_screen():
         <div style='text-align: center;'>
             <h1 style='color:#4CAF50;'>👋 Hi {user}!</h1>
             <h4>Welcome to your <span style="color:#FF6F61;">Personal AI Assistant</span> 👨‍💻</h4>
-            <p style='font-size:17px;'>Choose a tool you'd like to use. We'll ask for your <strong>GROQ API Key</strong> next.</p>
+            <p style='font-size:17px;'>Choose a tool you'd like to use. We'll ask for further information based on your choice.</p>
         </div>
     """, unsafe_allow_html=True)
 
