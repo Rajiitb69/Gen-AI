@@ -246,8 +246,8 @@ def get_excel_analyser_layout(tool):
         except Exception as e:
             st.error(f"Error running code: {e}")
                     
-            elif user_name!='' and not query:
-                st.warning("Please type a query to get started.")
+    elif user_name!='' and not query:
+        st.warning("Please type a query to get started.")
 
 def get_layout(tool):
     user_name = st.session_state.user_name.title()
