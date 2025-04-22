@@ -4,6 +4,7 @@ scipy
 scikit-learn
 xgboost
 openpyxl
+xlsxwriter
 langchain
 huggingface_hub
 langchain-community
