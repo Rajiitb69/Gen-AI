@@ -3,6 +3,7 @@ import re
 import streamlit as st
 import numpy as np
 import pandas as pd
+import xlsxwriter
 import scipy
 import matplotlib.pyplot as plt
 import seaborn as sns
@@ -78,12 +79,12 @@ text_summarization_header = """
 Excel_Analyser_prompt = """
 You are a helpful and friendly data analyst assisting a user named {username}. The user has uploaded a data file, which is already loaded into a Pandas DataFrame named `df`.
 DO NOT use pd.read_csv or pd.read_excel. Use the provided DataFrame `df` directly to answer the question.
+Avoid deprecated parameters like `errors='ignore'` in `pd.to_numeric`. If type conversion is needed, use `errors='coerce'` to safely convert invalid entries to NaN.
+If you're inserting images into an Excel sheet, make sure to create the worksheet first using add_worksheet.
 The uploaded data has the following structure:
 - Columns: {columns}
 - Sample rows:
 {head}
-Avoid deprecated parameters like `errors='ignore'` in `pd.to_numeric`. If type conversion is needed, use `errors='coerce'` to safely convert invalid entries to NaN.
-If you're inserting images into an Excel sheet, make sure to create the worksheet first using add_worksheet.
 
 User question: {query}
 
