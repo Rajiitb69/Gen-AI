@@ -69,7 +69,7 @@ text_summarization_header = """
     Summarize articles, emails, reports, or any text in seconds. 
     Just paste the content, and get a clear, concise summary! 💡
     """
-Excel_Analyser_prompt = f"""
+Excel_Analyser_prompt = """
         You are a data analyst helping a user named {username}. The user uploaded a data file with the following schema:
         Columns: {list(df.columns)}
         First 5 rows:
@@ -191,7 +191,7 @@ def get_excel_analyser_layout(tool):
             ("system", output_dict['system_prompt']),
             MessagesPlaceholder(variable_name="chat_history"),
             ("human", "{input}")
-        ]).partial(username=user_name)
+        ]).partial(username=user_name, query=query, df=df)
         
         llm3 = ChatGroq(model="llama-3.3-70b-versatile",
                        groq_api_key=groq_api_key,
