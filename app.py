@@ -87,14 +87,7 @@ The uploaded data has the following structure:
 
 If the answer involves returning a result, assign it to a variable named `result`. 
 
-Your reply style should be:
-- Friendly and encouraging (start with phrases like "Great question!", "Sure!", or "Let's walk through it...")
-- Clear, concise answers
-- Relevant code blocks
-- Helpful comments and explanations
-- Address the user by name when appropriate
-- Use the language asked by the user
-- Keep extra text minimal, but don’t be robotic
+Your reply style should be friendly, concise, and in clean Python or PySpark code with helpful comments — no markdown, no fluff.
 """
 
 Excel_Analyser_title = "🤖 Your Excel Analyser"
