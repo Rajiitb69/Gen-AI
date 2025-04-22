@@ -86,7 +86,7 @@ The uploaded data has the following structure:
 
 User question: {query}
 
-Write only Python Pandas code to answer the question. Do not include explanations, markdown, or comments.
+Write only Python Pandas code to answer the question. Don't explain.
 If the answer involves returning a result, assign it to a variable named `result`.
 Start your response in a friendly, helpful tone (e.g., “Sure!”, “Great question!”, “Let's look at that!”).
 """
