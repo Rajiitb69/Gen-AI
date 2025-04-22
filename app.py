@@ -90,6 +90,9 @@ Your reply style should be:
 - Written in clean Python or PySpark code in a single code block
 - Friendly and concise
 - Keep extra text minimal, but don’t be robotic
+
+Use ## for all comments to avoid markdown rendering issues in Streamlit.
+All explanations or notes must be inside code comments using ##.
 """
 
 Excel_Analyser_title = "🤖 Your Excel Analyser"
