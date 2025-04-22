@@ -181,6 +181,8 @@ def get_layout(tool):
             {"role": "assistant", "content": output_dict['assistant_content']}]
         if tool == "📊 Excel Analyser":
             df = st.session_state.data
+            st.session_state.messages.append({"role": "assistant", "content": "Here's a quick preview of your uploaded data:"})
+            st.session_state.messages.append({"role": "assistant", "content": df.head().to_string(index=False)})
             st.chat_message("assistant").write("Here's a quick preview of your uploaded data:")
             st.chat_message("assistant").dataframe(df.head())
     
