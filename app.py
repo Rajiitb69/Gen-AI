@@ -319,9 +319,10 @@ def get_layout(tool):
             response=chain.invoke({"input": query,"chat_history": chat_history}, callbacks=[st_cb])
             if tool == "📊 Excel Analyser":
                 final_answer = response.content.strip('```python').strip('`').strip('python') if hasattr(response, "content") else str(response.strip('```python').strip('`').strip('python'))
+                st.code(final_answer, language="python")
             else:
                 final_answer = response.content if hasattr(response, "content") else str(response)
-            st.write(final_answer)
+                st.write(final_answer)
             st.session_state.messages.append({'role': 'assistant', "content": final_answer})
         if tool == "📊 Excel Analyser":
             # Safe execution (use caution in production)
