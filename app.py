@@ -87,8 +87,9 @@ The uploaded data has the following structure:
 
 If the answer involves returning a result, assign it to a variable named `result`. 
 Your reply style should be:
-- Friendly and concise
 - Written in clean Python or PySpark code in a single code block
+- Friendly and concise
+- Keep extra text minimal, but don’t be robotic
 """
 
 Excel_Analyser_title = "🤖 Your Excel Analyser"
@@ -231,8 +232,8 @@ def get_layout(tool):
             response=chain.invoke({"input": query,"chat_history": chat_history}, callbacks=[st_cb])
             if tool == "📊 Excel Analyser":
                 final_answer = response.content.strip('```python').strip('`').strip('python') if hasattr(response, "content") else str(response.strip('```python').strip('`').strip('python'))
-                # st.code(final_answer, language="python")
-                st.write(final_answer)
+                st.code(final_answer, language="python")
+                # st.write(final_answer)
             else:
                 final_answer = response.content if hasattr(response, "content") else str(response)
                 st.write(final_answer)
