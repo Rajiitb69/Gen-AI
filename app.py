@@ -76,17 +76,21 @@ text_summarization_header = """
     Just paste the content, and get a clear, concise summary! 💡
     """
 Excel_Analyser_prompt = """
-        You are a data analyst helping a user named {username}. The user uploaded a data file with the following schema:
-        Columns: {columns}
-        First 5 rows:
-        {head}
+You are a helpful and friendly data analyst assisting a user named {username}. The user has uploaded a data file, which is already loaded into a Pandas DataFrame named `df`.
+DO NOT use pd.read_csv or pd.read_excel. Use the provided DataFrame `df` directly to answer the question.
+Avoid deprecated parameters like `errors='ignore'` in `pd.to_numeric`. If type conversion is needed, use `errors='coerce'` to safely convert invalid entries to NaN.
+The uploaded data has the following structure:
+- Columns: {columns}
+- Sample rows:
+{head}
 
-        User question: {query}
-        Write Python Pandas code to answer the question. Only return code. Don't explain.
-        If the result needs to be shown, assign it to a variable named 'result'.
-        Please follow these guidelines:
-        Keep your tone helpful and friendly (start with phrases like "Great question!", "Sure!", etc.).
-        """
+User question: {query}
+
+Write only Python Pandas code to answer the question. Do not include explanations, markdown, or comments.
+If the answer involves returning a result, assign it to a variable named `result`.
+Start your response in a friendly, helpful tone (e.g., “Sure!”, “Great question!”, “Let's look at that!”).
+"""
+
 Excel_Analyser_title = "🤖 Your Excel Analyser"
 Excel_Analyser_header = """
     Welcome to your personal **Excel Analyser**!
@@ -221,6 +225,8 @@ def get_excel_analyser_layout(tool):
         # Safe execution (use caution in production)
         try:
             local_vars = {'df': df.copy()}
+            local_vars['df'] = local_vars['df'].apply(pd.to_numeric, errors='coerce')
+            code = code.replace("errors='ignore'", "errors='coerce'")
             exec(code, {}, local_vars)
             result = local_vars.get('result')
             if result is not None:
