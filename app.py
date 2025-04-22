@@ -151,7 +151,7 @@ def generic_uploader():
     st.markdown(f"""
         <div style='text-align: center;'>
             <h4 style='color:#4CAF50;'>👋 Hi {user_name}!</h4>
-            <p style='font-size:17px;'>you have selected {selection} tool So no need to upload anything</p>
+            <p style='font-size:17px;'>You have selected <strong>{selection}</strong> tool, So no need to upload anything</p>
         </div>""", unsafe_allow_html=True)
     if st.button("Go ahead"):
         st.session_state.step = 'main'
@@ -190,7 +190,7 @@ def get_excel_analyser_layout(tool):
         prompt_template = ChatPromptTemplate.from_messages([
             ("system", output_dict['system_prompt']),
             MessagesPlaceholder(variable_name="chat_history"),
-            ("human", "{input}")
+            ("human", "input")
         ]).partial(username=user_name, query=query, columns=list(df.columns),
                     head=df.head().to_string(index=False))
         
@@ -208,8 +208,8 @@ def get_excel_analyser_layout(tool):
             st_cb=StreamlitCallbackHandler(st.container(),expand_new_thoughts=False)
             response=chain.invoke({"input": query,"chat_history": chat_history}, callbacks=[st_cb])
             code = response.content.strip('`python').strip('`')
-            st.code(code, language="python")
-            # st.write(final_answer)
+            # st.code(code, language="python")
+            st.write(code)
             st.session_state.messages.append({'role': 'assistant', "content": code})
         
         # Safe execution (use caution in production)
@@ -259,8 +259,8 @@ def get_layout(tool):
         prompt_template = ChatPromptTemplate.from_messages([
             ("system", output_dict['system_prompt']),
             MessagesPlaceholder(variable_name="chat_history"),
-            ("human", "{input}")
-        ]).partial(username=user_name)
+            ("human", "input")
+        ]).partial(username=user_name, query=query)
         
         llm3 = ChatGroq(model="llama-3.3-70b-versatile",
                        groq_api_key=groq_api_key,
