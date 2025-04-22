@@ -182,9 +182,8 @@ def get_layout(tool):
         if tool == "📊 Excel Analyser":
             df = st.session_state.data
             st.session_state.messages.append({"role": "assistant", "content": "Here's a quick preview of your uploaded data:"})
-            st.session_state.messages.append({"role": "assistant", "content": df.head().to_string(index=False)})
-            st.chat_message("assistant").write("Here's a quick preview of your uploaded data:")
-            st.chat_message("assistant").dataframe(df.head())
+            st.session_state.messages.append({"role": "assistant", "content": df.head()})
+            # st.chat_message("assistant").dataframe(df.head())
     
     for msg in st.session_state.messages:
         st.chat_message(msg["role"]).write(msg['content'])
