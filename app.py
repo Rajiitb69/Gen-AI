@@ -8,6 +8,7 @@ import scipy
 import plotly.express as px
 import sklearn
 import xgboost as xgb
+from typing_extensions import Concatenate
 
 from langchain.callbacks.streamlit import StreamlitCallbackHandler
 from langchain_groq import ChatGroq
@@ -17,7 +18,8 @@ from langchain_core.prompts import PromptTemplate, ChatPromptTemplate, MessagesP
 from langchain_core.runnables import Runnable
 from langchain_core.messages import HumanMessage, AIMessage, SystemMessage
 
-from langchain_community.document_loaders import WikipediaLoader, PyPDFLoader
+from langchain_community.document_loaders import WikipediaLoader, PyPDFLoader, YoutubeLoader, UnstructuredURLLoader
+import docx
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.embeddings import HuggingFaceEmbeddings
 
@@ -135,6 +137,79 @@ def get_prompt(tool, user_name):
     output_dict = {"title":title, "header":header, "assistant_content":assistant_content, "system_prompt":system_prompt}
     return output_dict
     
+def rag_chatbot_uploader():
+    st.markdown("Welcome to **RAG-Based Chatbot!**")
+    st.write("Choose any option to upload your document which will be act as a retriever whiling generating response from LLM.")
+    tab1, tab2, tab3 = st.tabs(["Upload a File", "Enter Website URL", "Enter Text Manually"])
+    user_input = None
+
+    with tab1:
+        uploaded_file = st.file_uploader("Upload a file", type=["pdf", "docx", "txt"])
+        generate_file_input = st.button("Load file")
+
+    with tab2:
+        text_input = st.text_area(
+            "Text Input", height=150, placeholder="Paste your text here..."
+        )
+        generate_text_input = st.button("Go Ahead")
+    
+    with tab3:
+        url_input = st.text_input("Website, Wikipedia, Youtube URL", placeholder="Enter the URL here...")
+        generate_url_input = st.button("Go Ahead")
+    
+    user_input = None
+
+    if generate_file_input and uploaded_file is not None:
+        try:
+            with st.spinner("🔄 Uploading..."):
+                file_type = uploaded_file.type
+                if file_type == "text/plain":
+                    user_input = str(uploaded_file.read(), "utf-8")
+                elif file_type == "application/pdf":
+                    pdfreader = PdfReader(uploaded_file)
+                    user_input = ''
+                    for i, page in enumerate(pdfreader.pages):
+                        content = page.extract_text()
+                        if content:
+                            user_input += content
+                elif (file_type == "application/vnd.openxmlformats-officedocument.wordprocessingml.document"):
+                    doc = docx.Document(docx_file)
+                    user_input = "\n".join([para.text for para in doc.paragraphs])
+        except Exception as e:
+            st.exception(f"Exception:{e}")
+    elif generate_text_input and text_input:
+        user_input = text_input
+    
+    elif generate_url_input and url_input:
+        if not url_input.strip():
+            st.error("Please provide the information to get started")
+        elif not validators.url(url_input):
+            st.error("Please enter a valid Url. It should be a YT video/Wiki/website url")
+        else:
+            try:
+                with st.spinner("🔄 Uploading..."):
+                    ## loading the website or yt video data
+                    if "youtube.com" in url_input:
+                        loader=YoutubeLoader.from_youtube_url(url_input, add_video_info=True)
+                    elif "en.wikipedia.org" in url_input:
+                        query = url_input.split("/")[-1]
+                        loader = WikipediaLoader(query=query, load_max_docs=2)
+                    else:
+                        loader=UnstructuredURLLoader(urls=[url_input],ssl_verify=False,
+                                                     headers={"User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 13_5_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/116.0.0.0 Safari/537.36"})
+                    docs=loader.load()
+                    user_input = [doc.page_content for doc in docs]
+            except Exception as e:
+                st.exception(f"Exception:{e}")
+
+    if user_input:
+        st.session_state.user_input = user_input
+        st.success(f"Loaded successfully.")
+        st.session_state.step = 'main'
+        st.rerun()
+    else:
+        st.error(f"Please provide your file/url/text.")
+
 def data_analysis_uploader():
     st.markdown("Welcome to Excel/CSV Analyzer")
     st.title("📁 Upload your Data File")
@@ -166,6 +241,7 @@ def data_analysis_uploader():
                 st.error(f"Failed to load file: {e}")
     elif not uploaded_file:
         st.error(f"Please upload your file")
+
 
 def generic_uploader():
     user_name = st.session_state.user_name.title()
@@ -342,7 +418,7 @@ def greeting_screen():
     st.markdown("---")
     # Select screen
     selected = st.selectbox("📂 Choose a tool or section:",
-            ["📊 Excel Analyser", "💻 Code Assistant", "🧮 Math Assistant", "📝 Text Summarization", "🔎 RAG-based Chatbot", "📺 Youtube/Website Content Summarization"])
+            ["📊 Excel Analyser", "🔎 RAG-based Chatbot", "💻 Code Assistant", "🧮 Math Assistant", "📝 Text Summarization"])
     
     st.session_state.selected_screen = selected
     # Go button
@@ -388,16 +464,14 @@ def main_router():
     selection = st.session_state.get("selected_screen", "📊 Excel Analyser")
     if selection == "📊 Excel Analyser":
         excel_analyser_screen(selection)
+    elif selection == "🔎 RAG-based Chatbot":
+        RAG_based_chatbot_screen(selection)
     elif selection == "💻 Code Assistant":
         code_assistant_screen(selection)
     elif selection == "🧮 Math Assistant":
         math_assistant_screen(selection)
     elif selection == "📝 Text Summarization":
         text_summarization_screen(selection)
-    elif selection == "🔎 RAG-based Chatbot":
-        RAG_based_chatbot_screen(selection)
-    elif selection == "📺 Youtube/Website Content Summarization":
-        math_assistant_screen(selection)
     else:
         st.warning("No screen selected.")
 
