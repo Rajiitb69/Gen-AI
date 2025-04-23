@@ -93,8 +93,8 @@ Your reply style should be:
 - Friendly and concise
 - Keep extra text minimal, but don’t be robotic
 
-Use #### for all comments to avoid markdown rendering issues in Streamlit.
-All explanations or notes must be inside code comments using ####.
+Use ###### for all comments to avoid markdown rendering issues in Streamlit.
+All explanations or notes must be inside code comments using ######.
 """
 
 Excel_Analyser_title = "🤖 Your Excel Analyser"
@@ -239,7 +239,7 @@ def get_layout(tool):
             st_cb=StreamlitCallbackHandler(st.container(),expand_new_thoughts=False)
             response=chain.invoke({"input": query,"chat_history": chat_history}, callbacks=[st_cb])
             if tool == "📊 Excel Analyser":
-                final_answer = response.content.strip('```python').strip('`').strip('python') if hasattr(response, "content") else str(response.strip('```python').strip('`').strip('python'))
+                final_answer = response.content.strip('```python').strip("```").strip('python').strip('`')
                 st.code(final_answer, language="python")
                 # st.write(final_answer)
             else:
