@@ -89,8 +89,8 @@ Your response must follow this convention:
 - Do not show or display plots with `fig.show()` or `plt.show()`. Just return the figure as `fig`.
 - Write only clean code in a single code block.
 - Always add **clear and concise comments** using ###### to explain each step.
+- Do NOT include markdown, plain text explanations, or any additional context outside of code.
 - All explanations or notes must be inside code comments using ######.
-- Do NOT include markdown, plain text explanations, or any additional context outside of Python code with comments.
 - Do NOT use backticks for code blocks or explanations.
 
 """
