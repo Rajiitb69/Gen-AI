@@ -33,8 +33,8 @@ from langchain.chains import RetrievalQA, create_retrieval_chain, create_history
 import youtube_transcript_api._api 
 youtube_transcript_api._api.requests_kwargs = {
     "proxies": {
-        "http": "http://44.218.183.55:80",
-        "https": "http://44.218.183.55:80"
+        "http": st.secrets["proxy"],
+        "https": st.secrets["proxy"]
     }
 }
 
