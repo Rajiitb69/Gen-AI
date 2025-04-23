@@ -7,9 +7,12 @@ openpyxl
 xlsxwriter
 langchain
 huggingface_hub
+sentence-transformers
 langchain-community
 langchain_groq
 faiss-cpu
+cassio
+datasets
 rank_bm25
 wikipedia
 pypdf
