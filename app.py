@@ -155,7 +155,7 @@ def rag_chatbot_uploader():
     
     with tab3:
         url_input = st.text_input("Website, Wikipedia, Youtube URL", placeholder="Enter the URL here...")
-        generate_url_input = st.button("Go Ahead")
+        generate_url_input = st.button("Go Ahead 1")
     
     user_input = None
 
