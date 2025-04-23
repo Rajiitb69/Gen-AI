@@ -9,6 +9,7 @@ import plotly.express as px
 import sklearn
 import xgboost as xgb
 from typing_extensions import Concatenate
+import validators
 
 from langchain.callbacks.streamlit import StreamlitCallbackHandler
 from langchain_groq import ChatGroq
