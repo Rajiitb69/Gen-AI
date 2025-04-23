@@ -135,8 +135,6 @@ User Question: {{input}}
 
 Rewritten Standalone Question:
 """
-
-
 Rag_chatbot_title = "🤖 Your RAG-Based Chatbot"
 Rag_chatbot_header = """
     Welcome to your personal **RAG-Based Chatbot**!
