@@ -16,7 +16,7 @@ from langchain_groq import ChatGroq
 
 from langchain.chains.combine_documents import create_stuff_documents_chain
 from langchain_core.prompts import PromptTemplate, ChatPromptTemplate, MessagesPlaceholder
-from langchain_core.runnables import Runnable
+from langchain.schema.runnable import RunnableLambda, Runnable
 from langchain_core.messages import HumanMessage, AIMessage, SystemMessage
 
 from langchain_community.document_loaders import WikipediaLoader, PyPDFLoader, YoutubeLoader, UnstructuredURLLoader
