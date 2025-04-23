@@ -434,6 +434,8 @@ def upload_screen():
     logout_sidebar(user)
     if selection == "📊 Excel Analyser":
         data_analysis_uploader()
+    if selection == "🔎 RAG-based Chatbot":
+        rag_chatbot_uploader()
     else:
         generic_uploader()
         
