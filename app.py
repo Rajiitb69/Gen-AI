@@ -364,7 +364,7 @@ def get_layout(tool):
                 ("system", output_dict['system_prompt']),
                 MessagesPlaceholder(variable_name="chat_history"),
                 ("human", "{input}")
-            ]).partial(username=user_name, query=query)
+            ]).partial(username=user_name)
             
         if tool == "🔎 RAG-based Chatbot":
             docs = st.session_state.documents
