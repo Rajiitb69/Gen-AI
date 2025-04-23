@@ -16,6 +16,14 @@ from langchain.chains.combine_documents import create_stuff_documents_chain
 from langchain_core.prompts import PromptTemplate, ChatPromptTemplate, MessagesPlaceholder
 from langchain_core.runnables import Runnable
 from langchain_core.messages import HumanMessage, AIMessage, SystemMessage
+
+from langchain_community.document_loaders import WikipediaLoader, PyPDFLoader
+from langchain.text_splitter import RecursiveCharacterTextSplitter
+from langchain.embeddings import HuggingFaceEmbeddings
+
+from langchain.vectorstores import FAISS
+from langchain.retrievers import BM25Retriever, MergerRetriever
+from langchain.chains import RetrievalQA, create_retrieval_chain, create_history_aware_retriever
 ## Code #####
 
 code_assistant_prompt = """You are CodeGenie, an expert software engineer and coding tutor.
