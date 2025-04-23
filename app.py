@@ -23,12 +23,10 @@ from langchain_community.document_loaders import WikipediaLoader, PyPDFLoader, Y
 from PyPDF2 import PdfReader
 import docx
 from langchain.text_splitter import RecursiveCharacterTextSplitter
-from langchain.embeddings import HuggingFaceEmbeddings
+from langchain_community.embeddings import HuggingFaceEmbeddings
 
 from langchain.vectorstores import FAISS
-from langchain.vectorstores.cassandra import Cassandra
-from langchain.indexes.vectorstore import VectorStoreIndexWrapper
-import cassio
+from langchain.schema import Document
 from langchain.retrievers import BM25Retriever, MergerRetriever
 from langchain.chains import RetrievalQA, create_retrieval_chain, create_history_aware_retriever
 ## Code #####
@@ -251,7 +249,7 @@ def rag_chatbot_uploader():
                 chunk_size=800,
                 chunk_overlap=20,
                 separators=["\n\n", "\n", ".", "!", "?", " ", ""])
-            documents = splitter.split_text(user_input)
+            documents = [Document(page_content=chunk) for chunk in splitter.split_text(user_input)]
             faiss_db = FAISS.from_documents(documents, embedding_model)
             dense_retriever = faiss_db.as_retriever(search_type="mmr",  # MMR = Maximal Marginal Relevance for relevance + diversity
                                             search_kwargs={"k": 3, # number of docs
