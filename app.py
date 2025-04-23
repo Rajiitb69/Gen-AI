@@ -216,7 +216,7 @@ def rag_chatbot_uploader():
                 with st.spinner("🔄 Uploading..."):
                     ## loading the website or yt video data
                     if "youtube.com" in url_input:
-                        loader=YoutubeLoader.from_youtube_url(url_input, add_video_info=True)
+                        loader=YoutubeLoader.from_youtube_url(url_input.strip(), add_video_info=True, language=["en"])
                     elif "en.wikipedia.org" in url_input:
                         query = url_input.split("/")[-1]
                         loader = WikipediaLoader(query=query, load_max_docs=2)
