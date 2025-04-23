@@ -260,6 +260,7 @@ def rag_chatbot_uploader():
             hybrid_retriever = MergerRetriever(retrievers=[dense_retriever, bm25_retriever],
                                        weights=[0.7, 0.3])
             st.session_state.context = user_input
+            st.session_state.documents = documents
             st.session_state.hybrid_retriever = hybrid_retriever
             st.success(f"Loaded successfully.")
             st.session_state.step = 'main'
@@ -366,8 +367,10 @@ def get_layout(tool):
             ]).partial(username=user_name, query=query)
             
         if tool == "🔎 RAG-based Chatbot":
-            format_docs = st.session_state.context
+            docs = st.session_state.documents
             hybrid_retriever = st.session_state.hybrid_retriever
+            def format_docs(docs):
+                return "\n\n".join(doc.page_content for doc in docs)
             llm3 = ChatGroq(model="llama-3.3-70b-versatile",
                groq_api_key=groq_api_key,
                 temperature = 0.7,  max_tokens = 300,   
