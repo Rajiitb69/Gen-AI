@@ -26,6 +26,9 @@ from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.embeddings import HuggingFaceEmbeddings
 
 from langchain.vectorstores import FAISS
+from langchain.vectorstores.cassandra import Cassandra
+from langchain.indexes.vectorstore import VectorStoreIndexWrapper
+import cassio
 from langchain.retrievers import BM25Retriever, MergerRetriever
 from langchain.chains import RetrievalQA, create_retrieval_chain, create_history_aware_retriever
 ## Code #####
