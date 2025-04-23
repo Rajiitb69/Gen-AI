@@ -19,6 +19,7 @@ from langchain_core.runnables import Runnable
 from langchain_core.messages import HumanMessage, AIMessage, SystemMessage
 
 from langchain_community.document_loaders import WikipediaLoader, PyPDFLoader, YoutubeLoader, UnstructuredURLLoader
+from PyPDF2 import PdfReader
 import docx
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.embeddings import HuggingFaceEmbeddings
@@ -144,18 +145,18 @@ def rag_chatbot_uploader():
     user_input = None
 
     with tab1:
-        uploaded_file = st.file_uploader("Upload a file", type=["pdf", "docx", "txt"])
+        uploaded_file = st.file_uploader("Upload a pdf/docs/txt file", type=["pdf", "docx", "txt"])
         generate_file_input = st.button("Load file")
-
+        
     with tab2:
+        url_input = st.text_input("Website, Wikipedia, Youtube URL", placeholder="Enter the URL here...")
+        generate_url_input = st.button("Go Ahead 1")
+    
+    with tab3:
         text_input = st.text_area(
             "Text Input", height=150, placeholder="Paste your text here..."
         )
         generate_text_input = st.button("Go Ahead")
-    
-    with tab3:
-        url_input = st.text_input("Website, Wikipedia, Youtube URL", placeholder="Enter the URL here...")
-        generate_url_input = st.button("Go Ahead 1")
     
     user_input = None
 
