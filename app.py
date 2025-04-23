@@ -87,14 +87,12 @@ Your response must follow this convention:
 - If your answer returns a Plotly Express chart, assign the figure to a variable named `fig`.
 - If your answer returns a DataFrame or Excel output, assign it to a variable named `result`.
 - Do not show or display plots with `fig.show()` or `plt.show()`. Just return the figure as `fig`.
+- Write only clean code in a single code block.
+- Always add **clear and concise comments** using ###### to explain each step.
+- All explanations or notes must be inside code comments using ######.
+- Do NOT include markdown, plain text explanations, or any additional context outside of Python code with comments.
+- Do NOT use backticks for code blocks or explanations.
 
-Your reply style should be:
-- Written in clean Python or PySpark code in a single code block
-- Friendly and concise
-- Keep extra text minimal, but don’t be robotic
-
-Use ###### for all comments to avoid markdown rendering issues in Streamlit.
-All explanations or notes must be inside code comments using ######.
 """
 
 Excel_Analyser_title = "🤖 Your Excel Analyser"
