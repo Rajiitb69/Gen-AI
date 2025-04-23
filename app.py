@@ -18,8 +18,6 @@ from langchain_core.prompts import PromptTemplate, ChatPromptTemplate, MessagesP
 from langchain_core.runnables import Runnable
 from langchain_core.messages import HumanMessage, AIMessage, SystemMessage
 ## Code #####
-# Dummy credentials
-PASSWORD = "Sherlocked"
 
 code_assistant_prompt = """You are CodeGenie, an expert software engineer and coding tutor.
 You are currently helping a user named {username}.
@@ -102,6 +100,7 @@ Excel_Analyser_header = """
     Just paste the query, and get code! 💡
     """
 groq_api_key = st.secrets["GROQ_API_KEY"]
+PASSWORD = st.secrets["PASSWORD"]
 def get_prompt(tool, user_name):
     if tool == "💻 Code Assistant":
         title = code_assistant_title
