@@ -174,7 +174,7 @@ def rag_chatbot_uploader():
                         if content:
                             user_input += content
                 elif (file_type == "application/vnd.openxmlformats-officedocument.wordprocessingml.document"):
-                    doc = docx.Document(docx_file)
+                    doc = docx.Document(uploaded_file)
                     user_input = "\n".join([para.text for para in doc.paragraphs])
         except Exception as e:
             st.exception(f"Exception:{e}")
