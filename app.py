@@ -30,6 +30,13 @@ from langchain.schema import Document
 from langchain.retrievers import BM25Retriever, MergerRetriever
 from langchain.chains import RetrievalQA, create_retrieval_chain, create_history_aware_retriever
 ## Code #####
+import youtube_transcript_api._api 
+youtube_transcript_api._api.requests_kwargs = {
+    "proxies": {
+        "http": "http://44.218.183.55:80",
+        "https": "http://44.218.183.55:80"
+    }
+}
 
 code_assistant_prompt = """You are CodeGenie, an expert software engineer and coding tutor.
 You are currently helping a user named {username}.
