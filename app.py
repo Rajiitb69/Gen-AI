@@ -383,6 +383,9 @@ def get_layout(tool):
                 final_answer = response.content.strip('```python').strip("```").strip('python').strip('`')
                 st.code(final_answer, language="python")
                 # st.write(final_answer)
+            elif tootl == "🔎 RAG-based Chatbot":
+                final_answer = response.answer if hasattr(response, "answer") else str(response)
+                st.write(final_answer)
             else:
                 final_answer = response.content if hasattr(response, "content") else str(response)
                 st.write(final_answer)
