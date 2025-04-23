@@ -5,6 +5,7 @@ import numpy as np
 import pandas as pd
 import xlsxwriter
 import scipy
+import plotly.express as px
 import matplotlib.pyplot as plt
 import seaborn as sns
 import sklearn
@@ -83,14 +84,17 @@ The uploaded data has the following structure:
 - Sample rows:
 {head}
 
-If the answer involves returning a result, assign it to a variable named `result`. 
+Your response must follow this convention:
+- If your answer returns a DataFrame or an Excel file, assign it to a variable named `result`.
+- If your answer returns a Plotly Express figure object, assign it to a variable named `fig`.
+
 Your reply style should be:
 - Written in clean Python or PySpark code in a single code block
 - Friendly and concise
 - Keep extra text minimal, but don’t be robotic
 
-Use ## for all comments to avoid markdown rendering issues in Streamlit.
-All explanations or notes must be inside code comments using ##.
+Use #### for all comments to avoid markdown rendering issues in Streamlit.
+All explanations or notes must be inside code comments using ####.
 """
 
 Excel_Analyser_title = "🤖 Your Excel Analyser"
@@ -181,21 +185,12 @@ def get_layout(tool):
 
     if "messages" not in st.session_state:
         st.session_state["messages"]=[]
-            # {"role": "assistant", "content": output_dict['assistant_content']}]
         st.chat_message("assistant").write(output_dict['assistant_content'])
         
         if tool == "📊 Excel Analyser":
             df = st.session_state.data
             st.chat_message("assistant").write("Here's a quick preview of your uploaded data:")
-            st.chat_message("assistant").dataframe(df.head())
-    # if tool == "📊 Excel Analyser":
-    #     with st.expander("Previous Chat Messages"):
-    #         for msg in st.session_state.messages:
-    #             st.chat_message(msg["role"]).write(msg['content'])
-    # else:
-    #     for msg in st.session_state.messages:
-    #         st.chat_message(msg["role"]).write(msg['content'])
-    
+            st.chat_message("assistant").dataframe(df.head())    
     
     with st.expander("Previous Chat Messages"):
         for msg in st.session_state.messages:
@@ -230,7 +225,7 @@ def get_layout(tool):
                 ("human", "{input}")
             ]).partial(username=user_name, query=query)
         
-        llm3 = ChatGroq(model="llama-3.3-70b-versatile",
+        llm3 = ChatGroq(model="llama3-70b-8192",
                        groq_api_key=groq_api_key,
                         temperature = 0.2,  # for randomness, low- concise & accurate output, high - diverse and creative output
                       max_tokens = 600,   # Short/long output responses (control length)
@@ -255,12 +250,15 @@ def get_layout(tool):
             # Safe execution (use caution in production)
             try:
                 df_numeric = df.copy()
-                local_vars = {'df': df_numeric, 'pd': pd}
-                global_vars = {'pd': pd}
+                local_vars = {'df': df_numeric, 'pd': pd, 'px': px}
+                global_vars = {'pd': pd, 'px': px}
                 exec(final_answer, global_vars, local_vars)
-                result = local_vars.get('result')
+                result = local_vars.get('result', None)
+                fig = local_vars.get("fig", None)
+                if fig and hasattr(fig, 'to_plotly_json'):
+                    st.plotly_chart(fig)
             
-                if result is not None:
+                if result:
                     st.write("### Result")
                     if isinstance(result, pd.DataFrame):
                         st.dataframe(result)
