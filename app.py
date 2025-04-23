@@ -146,8 +146,7 @@ Rag_chatbot_header = """
 
 groq_api_key = st.secrets["GROQ_API_KEY"]
 PASSWORD = st.secrets["PASSWORD"]
-ASTRA_DB_token = st.secrets["ASTRA_DB_token"]
-ASTRA_DB_ID = st.secrets["ASTRA_DB_ID"]
+
 def get_prompt(tool, user_name):
     if tool == "💻 Code Assistant":
         title = code_assistant_title
@@ -246,20 +245,15 @@ def rag_chatbot_uploader():
                 st.exception(f"Exception:{e}")
 
     if user_input:
-        with st.spinner("🔄 Uploading..."):
+        with st.spinner("🔄 Retriever loading..."):
             embedding_model = HuggingFaceEmbeddings(model_name="BAAI/bge-base-en-v1.5")
             splitter = RecursiveCharacterTextSplitter(
                 chunk_size=800,
                 chunk_overlap=20,
                 separators=["\n\n", "\n", ".", "!", "?", " ", ""])
             documents = splitter.split_text(user_input)
-            cassio.init(token=ASTRA_DB_token, database_id=ASTRA_DB_ID)
-            astra_vector_store = Cassandra(embedding=embedding_model,
-                                           table_name="rag_QnA",  # Table name in Astra
-                                            session=None,            # CassIO auto-handles the session
-                                            keyspace=None)            # CassIO auto-handles the keyspace
-            astra_vector_store.add_documents(documents)
-            dense_retriever = astra_vector_store.as_retriever(search_type="mmr",  # MMR = Maximal Marginal Relevance for relevance + diversity
+            faiss_db = FAISS.from_documents(documents, embedding_model)
+            dense_retriever = faiss_db.as_retriever(search_type="mmr",  # MMR = Maximal Marginal Relevance for relevance + diversity
                                             search_kwargs={"k": 3, # number of docs
                                                            "lambda_mult": 0.7}) # (1.0 = pure relevance, 0.0 = pure diversity)
             # BM25Retriever is a keyword-based retriever
