@@ -1,5 +1,4 @@
 pyspark
-distutils
 plotly
 scipy
 scikit-learn
