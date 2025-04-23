@@ -113,8 +113,40 @@ Excel_Analyser_header = """
     Generate the code in seconds. 
     Just paste the query, and get code! 💡
     """
+Rag_chatbot_prompt = """
+You are an intelligent assistant for answering user queries using retrieved context from a knowledge base.
+
+Instructions:
+- Use the provided context below to answer the question.
+- If the answer is not contained in the context, respond with "I don't know based on the provided information."
+- Do NOT make up facts or use knowledge beyond the retrieved context.
+
+Retrieved Context:
+{context}
+
+Next, you are given a chat history and the latest user question. The question may refer to earlier parts of the conversation.
+
+Your task:
+- Rewrite the user question as a **self-contained** and **standalone** query that does not depend on prior chat history.
+- If the question is already clear on its own, return it unchanged.
+
+Chat History: {{chat_history}}
+User Question: {{input}}
+
+Rewritten Standalone Question:
+"""
+
+
+Rag_chatbot_title = "🤖 Your RAG-Based Chatbot"
+Rag_chatbot_header = """
+    Welcome to your personal **RAG-Based Chatbot**!
+    You can ask the question based on your uploaded content.
+    """
+
 groq_api_key = st.secrets["GROQ_API_KEY"]
 PASSWORD = st.secrets["PASSWORD"]
+ASTRA_DB_token = st.secrets["ASTRA_DB_token"]
+ASTRA_DB_ID = st.secrets["ASTRA_DB_ID"]
 def get_prompt(tool, user_name):
     if tool == "💻 Code Assistant":
         title = code_assistant_title
@@ -136,6 +168,11 @@ def get_prompt(tool, user_name):
         header = Excel_Analyser_header
         assistant_content = f"Hi {user_name}, I'm a Excel Analyser. How can I help you?"
         system_prompt = Excel_Analyser_prompt
+    elif tool == "🔎 RAG-based Chatbot":
+        title = Rag_chatbot_title
+        header = Rag_chatbot_header
+        assistant_content = f"Hi {user_name}, I'm a RAG Based Chatbot. How can I help you?"
+        system_prompt = Rag_chatbot_prompt
     output_dict = {"title":title, "header":header, "assistant_content":assistant_content, "system_prompt":system_prompt}
     return output_dict
     
@@ -200,15 +237,40 @@ def rag_chatbot_uploader():
                         loader=UnstructuredURLLoader(urls=[url_input],ssl_verify=False,
                                                      headers={"User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 13_5_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/116.0.0.0 Safari/537.36"})
                     docs=loader.load()
-                    user_input = [doc.page_content for doc in docs]
+                    raw_texts = [doc.page_content for doc in docs]
+                    clean_texts = [re.sub(r'\s*\n\s*', ' ', text) for text in raw_texts]
+                    clean_texts = [re.sub(r'\s{2,}', ' ', text).strip() for text in clean_texts]
+                    user_input = "\n".join([text for text in clean_texts])
             except Exception as e:
                 st.exception(f"Exception:{e}")
 
     if user_input:
-        st.session_state.user_input = user_input
-        st.success(f"Loaded successfully.")
-        st.session_state.step = 'main'
-        st.rerun()
+        with st.spinner("🔄 Uploading..."):
+            embedding_model = HuggingFaceEmbeddings(model_name="BAAI/bge-base-en-v1.5")
+            splitter = RecursiveCharacterTextSplitter(
+                chunk_size=800,
+                chunk_overlap=20,
+                separators=["\n\n", "\n", ".", "!", "?", " ", ""])
+            documents = splitter.split_text(user_input)
+            cassio.init(token=ASTRA_DB_token, database_id=ASTRA_DB_ID)
+            astra_vector_store = Cassandra(embedding=embedding_model,
+                                           table_name="rag_QnA",  # Table name in Astra
+                                            session=None,            # CassIO auto-handles the session
+                                            keyspace=None)            # CassIO auto-handles the keyspace
+            astra_vector_store.add_documents(documents)
+            dense_retriever = astra_vector_store.as_retriever(search_type="mmr",  # MMR = Maximal Marginal Relevance for relevance + diversity
+                                            search_kwargs={"k": 3, # number of docs
+                                                           "lambda_mult": 0.7}) # (1.0 = pure relevance, 0.0 = pure diversity)
+            # BM25Retriever is a keyword-based retriever
+            bm25_retriever = BM25Retriever.from_documents(documents)
+            bm25_retriever.k = 3
+            hybrid_retriever = MergerRetriever(retrievers=[dense_retriever, bm25_retriever],
+                                       weights=[0.7, 0.3])
+            st.session_state.context = user_input
+            st.session_state.hybrid_retriever = hybrid_retriever
+            st.success(f"Loaded successfully.")
+            st.session_state.step = 'main'
+            st.rerun()
     else:
         st.error(f"Please provide your file/url/text.")
 
@@ -302,23 +364,29 @@ def get_layout(tool):
             ("human", "{input}")
             ]).partial(username=user_name, query=query, columns=list(df.columns),
                         head=df.head().to_string(index=False))
+             
         else:
             prompt_template = ChatPromptTemplate.from_messages([
                 ("system", output_dict['system_prompt']),
                 MessagesPlaceholder(variable_name="chat_history"),
                 ("human", "{input}")
             ]).partial(username=user_name, query=query)
+            
+        if tool == "🔎 RAG-based Chatbot":
+            format_docs = st.session_state.context
+            hybrid_retriever = st.session_state.hybrid_retriever
+            llm3 = ChatGroq(model="llama-3.3-70b-versatile",
+               groq_api_key=groq_api_key,
+                temperature = 0.7,  max_tokens = 300,   
+                model_kwargs={"top_p" : 0.7,})
+            chain: Runnable = (hybrid_retriever | RunnableLambda(format_docs) | prompt_template | llm3)
+        else:
+            llm3 = ChatGroq(model="llama3-70b-8192",
+                           groq_api_key=groq_api_key,
+                            temperature = 0.2,   max_tokens = 600,   
+                            model_kwargs={ "top_p" : 0.5, })
+            chain: Runnable = prompt_template | llm3
         
-        llm3 = ChatGroq(model="llama3-70b-8192",
-                       groq_api_key=groq_api_key,
-                        temperature = 0.2,  # for randomness, low- concise & accurate output, high - diverse and creative output
-                      max_tokens = 600,   # Short/long output responses (control length)
-                        model_kwargs={
-                                   "top_p" : 0.5,        # high - diverse and creative output
-                                    })
-        
-        chain: Runnable = prompt_template | llm3
-    
         with st.chat_message("assistant"):
             st_cb=StreamlitCallbackHandler(st.container(),expand_new_thoughts=False)
             response=chain.invoke({"input": query,"chat_history": chat_history}, callbacks=[st_cb])
