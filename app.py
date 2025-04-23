@@ -435,7 +435,7 @@ def upload_screen():
     logout_sidebar(user)
     if selection == "📊 Excel Analyser":
         data_analysis_uploader()
-    if selection == "🔎 RAG-based Chatbot":
+    elif selection == "🔎 RAG-based Chatbot":
         rag_chatbot_uploader()
     else:
         generic_uploader()
@@ -443,6 +443,9 @@ def upload_screen():
 
 # Streamlit UI                
 def excel_analyser_screen(selection):
+    get_layout(selection)
+
+def RAG_based_chatbot_screen(selection):
     get_layout(selection)
 
 def code_assistant_screen(selection):
@@ -453,14 +456,6 @@ def math_assistant_screen(selection):
 
 def text_summarization_screen(selection):
     get_layout(selection)
-
-def RAG_based_chatbot_screen(selection):
-    logout_sidebar(user_name)
-    st.title("🤖 Your RAG Based Chatbot")
-
-def content_summarization_screen(selection):
-    logout_sidebar(user_name)
-    st.title("🤖 Your Content Summarization Assistant")
     
 # Dispatcher to selected screen
 def main_router():
