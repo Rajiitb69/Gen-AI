@@ -258,7 +258,7 @@ def get_layout(tool):
                 if fig and hasattr(fig, 'to_plotly_json'):
                     st.plotly_chart(fig)
             
-                if result:
+                if result is not None:
                     st.write("### Result")
                     if isinstance(result, pd.DataFrame):
                         st.dataframe(result)
