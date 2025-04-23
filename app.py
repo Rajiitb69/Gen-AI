@@ -115,32 +115,21 @@ Excel_Analyser_header = """
     Just paste the query, and get code! 💡
     """
 Rag_chatbot_prompt = """
-You are an intelligent assistant for answering user queries using retrieved context from a knowledge base.
-
-Instructions:
-- Use the provided context below to answer the question.
-- If the answer is not contained in the context, respond with "I don't know based on the provided information."
-- Do NOT make up facts or use knowledge beyond the retrieved context.
-
-Retrieved Context:
+You are an assistant for question-answering tasks. Use the following pieces of retrieved context to answer the question. If you don't know the answer,
+say that you don't know. Use three sentences maximum and keep the answer concise.
 {context}
-
-Next, you are given a chat history and the latest user question. The question may refer to earlier parts of the conversation.
-
-Your task:
-- Rewrite the user question as a **self-contained** and **standalone** query that does not depend on prior chat history.
-- If the question is already clear on its own, return it unchanged.
-
-Chat History: {{chat_history}}
-User Question: {{input}}
-
-Rewritten Standalone Question:
-"""
+""""
 Rag_chatbot_title = "🤖 Your RAG-Based Chatbot"
 Rag_chatbot_header = """
     Welcome to your personal **RAG-Based Chatbot**!
     You can ask the question based on your uploaded content.
     """
+contextualize_q_system_prompt = (
+    "Given a chat history and the latest user question "
+    "which might reference context in the chat history, "
+    "formulate a standalone question which can be understood "
+    "without the chat history. Do NOT answer the question, "
+    "just reformulate it if needed and otherwise return it as is.")
 
 groq_api_key = st.secrets["GROQ_API_KEY"]
 PASSWORD = st.secrets["PASSWORD"]
@@ -358,7 +347,7 @@ def get_layout(tool):
             ("human", "{input}")
             ]).partial(username=user_name, query=query, columns=list(df.columns),
                         head=df.head().to_string(index=False))
-             
+    
         else:
             prompt_template = ChatPromptTemplate.from_messages([
                 ("system", output_dict['system_prompt']),
@@ -367,15 +356,19 @@ def get_layout(tool):
             ]).partial(username=user_name)
             
         if tool == "🔎 RAG-based Chatbot":
-            docs = st.session_state.documents
             hybrid_retriever = st.session_state.hybrid_retriever
-            def format_docs(docs):
-                return "\n\n".join(doc.page_content for doc in docs)
             llm3 = ChatGroq(model="llama-3.3-70b-versatile",
                groq_api_key=groq_api_key,
                 temperature = 0.7,  max_tokens = 300,   
                 model_kwargs={"top_p" : 0.7,})
-            chain: Runnable = (hybrid_retriever | RunnableLambda(format_docs) | prompt_template | llm3)
+            contextualize_q_prompt = ChatPromptTemplate.from_messages(
+                        [("system", contextualize_q_system_prompt),
+                            MessagesPlaceholder("chat_history"),
+                            ("human", "{input}"),])
+
+            history_aware_retriever=create_history_aware_retriever(llm3, hybrid_retriever, contextualize_q_prompt)
+            question_answer_chain = create_stuff_documents_chain(llm3, prompt_template)
+            chain = create_retrieval_chain(history_aware_retriever, question_answer_chain)
         else:
             llm3 = ChatGroq(model="llama3-70b-8192",
                            groq_api_key=groq_api_key,
