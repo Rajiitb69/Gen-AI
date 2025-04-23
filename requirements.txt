@@ -9,3 +9,13 @@ langchain
 huggingface_hub
 langchain-community
 langchain_groq
+faiss-cpu
+rank_bm25
+wikipedia
+pypdf
+python-docx
+validators==0.28.1
+youtube_transcript_api
+unstructured
+pytube
+numexpr
