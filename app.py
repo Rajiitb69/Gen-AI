@@ -180,17 +180,24 @@ def get_layout(tool):
     query = st.chat_input(placeholder="Write your query?")
 
     if "messages" not in st.session_state:
-        st.session_state["messages"]=[
-            {"role": "assistant", "content": output_dict['assistant_content']}]
+        st.session_state["messages"]=[]
+            # {"role": "assistant", "content": output_dict['assistant_content']}]
+        st.chat_message("assistant").write(output_dict['assistant_content'])
+        
         if tool == "📊 Excel Analyser":
             df = st.session_state.data
             st.chat_message("assistant").write("Here's a quick preview of your uploaded data:")
             st.chat_message("assistant").dataframe(df.head())
-    if tool == "📊 Excel Analyser":
-        with st.expander("Previous Chat Messages"):
-            for msg in st.session_state.messages:
-                st.chat_message(msg["role"]).write(msg['content'])
-    else:
+    # if tool == "📊 Excel Analyser":
+    #     with st.expander("Previous Chat Messages"):
+    #         for msg in st.session_state.messages:
+    #             st.chat_message(msg["role"]).write(msg['content'])
+    # else:
+    #     for msg in st.session_state.messages:
+    #         st.chat_message(msg["role"]).write(msg['content'])
+    
+    
+    with st.expander("Previous Chat Messages"):
         for msg in st.session_state.messages:
             st.chat_message(msg["role"]).write(msg['content'])
     
