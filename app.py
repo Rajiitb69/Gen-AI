@@ -85,8 +85,10 @@ The uploaded data has the following structure:
 {head}
 
 Your response must follow this convention:
-- If your answer returns a DataFrame or an Excel file, assign it to a variable named `result`.
-- If your answer returns a Plotly Express figure object, assign it to a variable named `fig`.
+- Use only Plotly Express (`import plotly.express as px`) for all visualizations. Do NOT use matplotlib, seaborn, or any other plotting libraries.
+- If your answer returns a Plotly Express chart, assign the figure to a variable named `fig`.
+- If your answer returns a DataFrame or Excel output, assign it to a variable named `result`.
+- Do not show or display plots with `fig.show()` or `plt.show()`. Just return the figure as `fig`.
 
 Your reply style should be:
 - Written in clean Python or PySpark code in a single code block
