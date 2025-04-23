@@ -6,8 +6,6 @@ import pandas as pd
 import xlsxwriter
 import scipy
 import plotly.express as px
-import matplotlib.pyplot as plt
-import seaborn as sns
 import sklearn
 import xgboost as xgb
 
