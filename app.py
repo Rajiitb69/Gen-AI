@@ -391,7 +391,7 @@ def get_layout(tool):
                 tmp_file_path = tmp_file.name
     
             with st.spinner("Transcribing..."):   
-                query = transcribe_with_groq(audio_path, os.environ["GROQ_API_KEY"])
+                query = transcribe_with_groq(tmp_file_path, groq_api_key)
             st.success("Transcription Complete!")
 
     if "messages" not in st.session_state:
