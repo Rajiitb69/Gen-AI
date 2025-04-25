@@ -16,6 +16,7 @@ import tempfile
 from streamlit_webrtc import webrtc_streamer, WebRtcMode
 import av
 import requests
+import soundfile as sf
 
 from langchain.callbacks.streamlit import StreamlitCallbackHandler
 from langchain_groq import ChatGroq
@@ -44,6 +45,24 @@ youtube_transcript_api._api.requests_kwargs = {
     }
 }
 
+# ========== AUDIO ==========
+audio_queue = queue.Queue()
+
+class AudioProcessor:
+    def recv(self, frame: av.AudioFrame) -> av.AudioFrame:
+        audio_queue.put(frame.to_ndarray().tobytes())
+        return frame
+
+def save_audio_file(q, path, samplerate=48000):
+    audio_data = []
+    while not q.empty():
+        audio_data.append(np.frombuffer(q.get(), dtype=np.int16))
+    if audio_data:
+        full_audio = np.concatenate(audio_data)
+        sf.write(path, full_audio, samplerate)
+        return True
+    return False
+
 def transcribe_with_groq(audio_path: str, groq_api_key: str) -> str:
     with open(audio_path, "rb") as f:
         response = requests.post(
@@ -70,20 +89,6 @@ def transcribe_with_groq(audio_path: str, groq_api_key: str) -> str:
         raise KeyError(f"No 'text' in response: {result}")
 
     return result["text"]
-
-# Record audio using streamlit-webrtc
-class AudioProcessor:
-    def __init__(self):
-        self.audio_frames = []
-
-    def recv(self, frame: av.AudioFrame):
-        self.audio_frames.append(frame)
-        return frame
-
-    def get_audio_bytes(self):
-        return b''.join([f.to_ndarray().tobytes() for f in self.audio_frames])
-
-audio_processor = AudioProcessor()
 
 code_assistant_prompt = """You are CodeGenie, an expert software engineer and coding tutor.
 You are currently helping a user named {username}.
@@ -388,21 +393,25 @@ def get_layout(tool):
     st.title(output_dict['title'])
     output_dict['header']
     query = st.chat_input(placeholder="Write your query?")
-    webrtc_ctx = webrtc_streamer( key="speech",mode=WebRtcMode.SENDONLY,
-                                    media_stream_constraints={"audio": True, "video": False},  # Enable only mic
-                                    rtc_configuration={  # Optional: use default STUN server
-                                        "iceServers": [{"urls": ["stun:stun.l.google.com:19302"]}]},
-                                    sendback_audio=False)
+    webrtc_ctx = webrtc_streamer(
+                                    key="speech-rag",
+                                    mode=WebRtcMode.SENDONLY,
+                                    audio_receiver_size=1024,
+                                    rtc_configuration={"iceServers": [{"urls": ["stun:stun.l.google.com:19302"]}]},
+                                    media_stream_constraints={"audio": True, "video": False},
+                                    audio_processor_factory=AudioProcessor,
+                                )
     # --- Transcribe Button ---
     if st.button("🎙️ Transcribe Speech"):
-        if webrtc_ctx.state.playing:
-            with tempfile.NamedTemporaryFile(delete=False, suffix=".wav") as tmp_file:
-                tmp_file.write(audio_processor.get_audio_bytes())
-                tmp_file_path = tmp_file.name
-    
-            with st.spinner("Transcribing..."):   
-                query = transcribe_with_groq(tmp_file_path, groq_api_key)
-            st.success("Transcription Complete!")
+        audio_path = "temp_audio.wav"
+        if save_audio_file(audio_queue, audio_path):
+            st.info("Transcribing via Groq Whisper API...")
+            try:
+                query = transcribe_with_groq(audio_path, groq_api_key)
+                st.success(f"You said: {query}")
+            except Exception as e:
+                st.error(f"Transcription failed: {e}")
+                st.stop()
 
     if "messages" not in st.session_state:
         st.session_state["messages"]=[]
