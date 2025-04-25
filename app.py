@@ -397,7 +397,7 @@ def get_layout(tool):
     # query = st.chat_input(placeholder="Write your query?")
     query = None
     webrtc_ctx = webrtc_streamer(
-                                    key="speech-rag",
+                                    key="audio-transcriber",
                                     mode=WebRtcMode.SENDONLY,
                                     audio_receiver_size=1024,
                                     rtc_configuration={"iceServers": [{"urls": ["stun:stun.l.google.com:19302"]}]},
