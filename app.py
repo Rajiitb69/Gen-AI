@@ -12,8 +12,9 @@ from typing_extensions import Concatenate
 import validators
 import hashlib
 import openai
-from streamlit_audio_recorder import audio_recorder
 import tempfile
+from streamlit_webrtc import webrtc_streamer, WebRtcMode
+import av
 
 from langchain.callbacks.streamlit import StreamlitCallbackHandler
 from langchain_groq import ChatGroq
@@ -42,10 +43,28 @@ youtube_transcript_api._api.requests_kwargs = {
     }
 }
 
-# Load Whisper model once
-@st.cache_resource
-def load_whisper():
-    return whisper.load_model("base")
+# Record audio using streamlit-webrtc
+class AudioProcessor:
+    def __init__(self):
+        self.audio_frames = []
+
+    def recv(self, frame: av.AudioFrame):
+        self.audio_frames.append(frame)
+        return frame
+
+    def get_audio_bytes(self):
+        return b''.join([f.to_ndarray().tobytes() for f in self.audio_frames])
+
+audio_processor = AudioProcessor()
+
+webrtc_ctx = webrtc_streamer(
+    key="speech",
+    mode=WebRtcMode.SENDONLY,
+    in_audio_enabled=True,
+    media_stream_constraints={"audio": True, "video": False},
+    sendback_audio=False,
+    on_audio_frame=audio_processor.recv,
+)
 
 code_assistant_prompt = """You are CodeGenie, an expert software engineer and coding tutor.
 You are currently helping a user named {username}.
@@ -349,32 +368,20 @@ def get_layout(tool):
     output_dict = get_prompt(tool, user_name)
     st.title(output_dict['title'])
     output_dict['header']
-    query = None
-    # query = st.chat_input(placeholder="Write your query?")
-    audio_bytes = audio_recorder(text="Click to speak", icon_size="2x")
-    openai.api_key = groq_api_key
-    openai.api_base = "https://api.groq.com/openai/v1"
-    if audio_bytes:
-        st.audio(audio_bytes, format="audio/wav")
+    query = st.chat_input(placeholder="Write your query?")
+    # --- Transcribe Button ---
+    if st.button("🎙️ Transcribe Speech"):
+        if webrtc_ctx.state.playing:
+            with tempfile.NamedTemporaryFile(delete=False, suffix=".wav") as tmp_file:
+                tmp_file.write(audio_processor.get_audio_bytes())
+                tmp_file_path = tmp_file.name
     
-        # Save the audio to temp file
-        with tempfile.NamedTemporaryFile(suffix=".mp3", delete=False) as f:
-            f.write(audio_bytes)
-            audio_path = f.name
-    
-        # Transcribe with Groq Whisper API
-        with open(audio_path, "rb") as f:
-            st.info("Transcribing your voice using Groq Whisper...")
-            result = openai.Audio.transcribe(
-                model="whisper-large-v3",
-                file=f
-            )
-            query = result["text"]
-
-    # if query_input:
-    #     query = query_input
-    # elif mic_button:
-    #     query = listen()
+            with st.spinner("Transcribing..."):
+                result = openai.Audio.transcribe(
+                    model="whisper-large-v3",
+                    file=open(tmp_file_path, "rb") )
+            query = result["text"]  # Use transcribed text as query
+            st.success("Transcription Complete!")
 
     if "messages" not in st.session_state:
         st.session_state["messages"]=[]
