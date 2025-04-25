@@ -432,8 +432,8 @@ def get_layout(tool):
                 st.stop()
         else:
             st.error(f"Not working")
-    if os.path.exists(AUDIO_FILE_PATH):
-        st.audio(AUDIO_FILE_PATH)
+    if os.path.exists(audio_path):
+        st.audio(audio_path)
 
     if "messages" not in st.session_state:
         st.session_state["messages"]=[]
