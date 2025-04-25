@@ -403,9 +403,17 @@ def get_layout(tool):
                                     media_stream_constraints={"audio": True, "video": False},
                                     audio_processor_factory=AudioProcessor,
                                 )
+    if webrtc_ctx.state.playing:
+        st.success("🎤 Recording is active")
+    else:
+        st.warning("⏹️ Waiting for audio stream...")
+    
+    st.write("⏳ Giving 3s for audio to stabilize...")
+    time.sleep(3)
     # --- Transcribe Button ---
     if st.button("🎙️ Transcribe Speech"):
         audio_path = "temp_audio.wav"
+        st.write(f"Queue size: {audio_queue.qsize()} bytes")
         if save_audio_file(audio_queue, audio_path):
             st.info("Transcribing via Groq Whisper API...")
             try:
