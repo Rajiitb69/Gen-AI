@@ -51,8 +51,14 @@ youtube_transcript_api._api.requests_kwargs = {
 audio_queue = queue.Queue()
 
 class AudioProcessor:
+    def __init__(self):
+        self.counter = 0
+
     def recv(self, frame: av.AudioFrame) -> av.AudioFrame:
-        audio_queue.put(frame.to_ndarray().tobytes())
+        audio = frame.to_ndarray()
+        audio_queue.put(audio.tobytes())
+        self.counter += 1
+        print(f"📥 Frame {self.counter}: {audio.shape}")
         return frame
 
 def save_audio_file(q, path, samplerate=48000):
@@ -416,7 +422,7 @@ def get_layout(tool):
         audio_path = "temp_audio.wav"
         st.write(f"Queue size: {audio_queue.qsize()} bytes")
         if save_audio_file(audio_queue, audio_path):
-            st.info("Transcribing via Groq Whisper API...")
+            st.success(f"✅ Audio saved to `{audio_path}`")
             try:
                 query = transcribe_with_groq(audio_path, groq_api_key)
                 query = 'hello how are you?'
@@ -426,6 +432,8 @@ def get_layout(tool):
                 st.stop()
         else:
             st.error(f"Not working")
+    if os.path.exists(AUDIO_FILE_PATH):
+        st.audio(AUDIO_FILE_PATH)
 
     if "messages" not in st.session_state:
         st.session_state["messages"]=[]
