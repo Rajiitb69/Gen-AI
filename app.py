@@ -11,6 +11,7 @@ import xgboost as xgb
 from typing_extensions import Concatenate
 import validators
 import hashlib
+import speech_recognition as sr
 
 from langchain.callbacks.streamlit import StreamlitCallbackHandler
 from langchain_groq import ChatGroq
@@ -38,6 +39,26 @@ youtube_transcript_api._api.requests_kwargs = {
         "https": st.secrets["proxy"]
     }
 }
+
+# Initialize SpeechRecognition recognizer
+recognizer = sr.Recognizer()
+
+# Function to capture speech and convert to text
+def listen():
+    with sr.Microphone() as source:
+        st.write("Listening...")
+        recognizer.adjust_for_ambient_noise(source)  # Adjust for ambient noise
+        audio = recognizer.listen(source)
+    try:
+        query = recognizer.recognize_google(audio)
+        st.write(f"Your query: {query}")
+        return query
+    except sr.UnknownValueError:
+        st.error("Sorry, I couldn't understand that.")
+        return None
+    except sr.RequestError:
+        st.error("There was an error with the speech recognition service.")
+        return None
 
 code_assistant_prompt = """You are CodeGenie, an expert software engineer and coding tutor.
 You are currently helping a user named {username}.
@@ -342,7 +363,13 @@ def get_layout(tool):
     st.title(output_dict['title'])
     output_dict['header']
     
-    query = st.chat_input(placeholder="Write your query?")
+    query_input = st.chat_input(placeholder="Write your query?")
+    mic_button = st.button("🎤 Speak Your Query")
+
+    if query_input:
+        query = query_input
+    elif mic_button:
+        query = listen()
 
     if "messages" not in st.session_state:
         st.session_state["messages"]=[]
@@ -391,7 +418,7 @@ def get_layout(tool):
             hybrid_retriever = st.session_state.hybrid_retriever
             llm3 = ChatGroq(model="llama-3.3-70b-versatile",
                groq_api_key=groq_api_key,
-                temperature = 0.7,  max_tokens = 300,   
+                temperature = 0.7,  max_tokens = 400,   
                 model_kwargs={"top_p" : 0.7,})
             contextualize_q_prompt = ChatPromptTemplate.from_messages(
                         [("system", contextualize_q_system_prompt),
@@ -404,7 +431,7 @@ def get_layout(tool):
         else:
             llm3 = ChatGroq(model="llama3-70b-8192",
                            groq_api_key=groq_api_key,
-                            temperature = 0.2,   max_tokens = 600,   
+                            temperature = 0.2,   max_tokens = 700,   
                             model_kwargs={ "top_p" : 0.5, })
             chain: Runnable = prompt_template | llm3
         
