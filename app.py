@@ -58,6 +58,14 @@ def transcribe_with_groq(audio_path: str, groq_api_key: str) -> str:
         )
     try:
         result = response.json()
+        if "text" in result and result["text"].strip():
+        transcribed_text = result["text"].strip()
+        if len(transcribed_text) > 5:
+            query = transcribed_text
+            st.markdown("### ✅ Final Transcription:")
+            st.write(query)
+        else:
+            st.warning("🟡 Transcription too short — try again.")
     except Exception as e:
         raise ValueError(f"Could not decode JSON: {e}\nRaw response: {response.text}")
 
@@ -67,7 +75,7 @@ def transcribe_with_groq(audio_path: str, groq_api_key: str) -> str:
     if "text" not in result:
         raise KeyError(f"No 'text' in response: {result}")
 
-    return result["text"]
+    return query
 
 code_assistant_prompt = """You are CodeGenie, an expert software engineer and coding tutor.
 You are currently helping a user named {username}.
@@ -374,13 +382,14 @@ def get_layout(tool):
     # query = st.chat_input(placeholder="Write your query?")
     query = None
     audio_bytes = audio_recorder(pause_threshold=4.0)
-    
     if audio_bytes:
-        file_path = "voice_query.wav"
-        with open(file_path, "wb") as f:
-            f.write(audio_bytes)
-        st.success("✅ Audio recorded")
-        query = transcribe_with_groq(file_path, groq_api_key)
+        with tempfile.NamedTemporaryFile(delete=False, suffix=".wav") as tmp:
+            tmp.write(audio_bytes)
+            tmp_path = tmp.name
+    
+        st.success(f"✅ Audio recorded and saved: {tmp_path}")
+        st.audio(tmp_path, format="audio/wav")
+        query = transcribe_with_groq(tmp_path, groq_api_key)
         st.success(f"You said: {query}")
 
     if "messages" not in st.session_state:
