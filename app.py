@@ -12,13 +12,8 @@ from typing_extensions import Concatenate
 import validators
 import hashlib
 import openai
-import tempfile
-from streamlit_webrtc import webrtc_streamer, WebRtcMode
-import av
 import requests
-import soundfile as SF
-import queue
-import time
+from audio_recorder_streamlit import audio_recorder
 
 from langchain.callbacks.streamlit import StreamlitCallbackHandler
 from langchain_groq import ChatGroq
@@ -46,30 +41,6 @@ youtube_transcript_api._api.requests_kwargs = {
         "https": st.secrets["proxy"]
     }
 }
-
-# ========== AUDIO ==========
-audio_queue = queue.Queue()
-audio_path = "temp_audio.wav"
-class AudioProcessor:
-    def __init__(self):
-        self.counter = 0
-
-    def recv(self, frame: av.AudioFrame) -> av.AudioFrame:
-        audio = frame.to_ndarray()
-        audio_queue.put(audio.tobytes())
-        self.counter += 1
-        print(f"📥 Frame {self.counter}: {audio.shape}")
-        return frame
-
-def save_audio_file(q, path, samplerate=48000):
-    audio_data = []
-    while not q.empty():
-        audio_data.append(np.frombuffer(q.get(), dtype=np.int16))
-    if audio_data:
-        full_audio = np.concatenate(audio_data)
-        sf.write(path, full_audio, samplerate)
-        return True
-    return False
 
 def transcribe_with_groq(audio_path: str, groq_api_key: str) -> str:
     with open(audio_path, "rb") as f:
@@ -402,37 +373,30 @@ def get_layout(tool):
     output_dict['header']
     # query = st.chat_input(placeholder="Write your query?")
     query = None
-    webrtc_ctx = webrtc_streamer(
-                                    key="audio-transcriber",
-                                    mode=WebRtcMode.SENDONLY,
-                                    audio_receiver_size=1024,
-                                    rtc_configuration={"iceServers": [{"urls": ["stun:stun.l.google.com:19302"]}]},
-                                    media_stream_constraints={"audio": True, "video": False},
-                                    audio_processor_factory=AudioProcessor,
-                                )
-    if webrtc_ctx.state.playing:
-        st.success("🎤 Recording is active")
-    else:
-        st.warning("⏹️ Waiting for audio stream...")
+    audio_bytes = audio_recorder(pause_threshold=2.0)
     
-    st.write("⏳ Giving 3s for audio to stabilize...")
-    time.sleep(3)
+    if audio_bytes:
+        file_path = "voice_query.wav"
+        with open(file_path, "wb") as f:
+            f.write(audio_bytes)
+        st.success("✅ Audio recorded")
+        query = transcribe_with_groq(file_path, groq_api_key)
     # --- Transcribe Button ---
-    if st.button("🎙️ Transcribe Speech"):
-        st.write(f"Queue size: {audio_queue.qsize()} bytes")
-        if save_audio_file(audio_queue, audio_path):
-            st.success(f"✅ Audio saved to `{audio_path}`")
-            try:
-                query = transcribe_with_groq(audio_path, groq_api_key)
-                query = 'hello how are you?'
-                st.success(f"You said: {query}")
-            except Exception as e:
-                st.error(f"Transcription failed: {e}")
-                st.stop()
-        else:
-            st.error(f"Not working")
-    if os.path.exists(audio_path):
-        st.audio(audio_path)
+    # if st.button("🎙️ Transcribe Speech"):
+    #     st.write(f"Queue size: {audio_queue.qsize()} bytes")
+    #     if save_audio_file(audio_queue, audio_path):
+    #         st.success(f"✅ Audio saved to `{audio_path}`")
+    #         try:
+    #             query = transcribe_with_groq(audio_path, groq_api_key)
+    #             query = 'hello how are you?'
+    #             st.success(f"You said: {query}")
+    #         except Exception as e:
+    #             st.error(f"Transcription failed: {e}")
+    #             st.stop()
+    #     else:
+    #         st.error(f"Not working")
+    if os.path.exists(file_path):
+        st.audio(file_path)
 
     if "messages" not in st.session_state:
         st.session_state["messages"]=[]
