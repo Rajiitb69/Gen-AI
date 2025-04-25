@@ -14,6 +14,7 @@ import hashlib
 import openai
 import requests
 from audio_recorder_streamlit import audio_recorder
+import tempfile
 
 from langchain.callbacks.streamlit import StreamlitCallbackHandler
 from langchain_groq import ChatGroq
