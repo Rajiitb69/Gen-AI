@@ -49,7 +49,7 @@ youtube_transcript_api._api.requests_kwargs = {
 
 # ========== AUDIO ==========
 audio_queue = queue.Queue()
-
+audio_path = "temp_audio.wav"
 class AudioProcessor:
     def __init__(self):
         self.counter = 0
@@ -419,7 +419,6 @@ def get_layout(tool):
     time.sleep(3)
     # --- Transcribe Button ---
     if st.button("🎙️ Transcribe Speech"):
-        audio_path = "temp_audio.wav"
         st.write(f"Queue size: {audio_queue.qsize()} bytes")
         if save_audio_file(audio_queue, audio_path):
             st.success(f"✅ Audio saved to `{audio_path}`")
