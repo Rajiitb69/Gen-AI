@@ -118,6 +118,8 @@ COMMAND GUIDELINES:
 3. If the user asks to **use matplotlib**:
     - Only then can you use `matplotlib.pyplot` and related functions (like `plot_tree`).
     - Display-related functions like `plt.show()` are still NOT allowed.
+    - Assign the resulting figure to a variable named `fig`.
+    - NEVER use `fig.show()` or `plt.show()`.
 
 4. If the user asks to **export file**:
     - Perform the operation and create a new DataFrame if needed.
