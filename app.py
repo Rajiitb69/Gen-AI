@@ -178,17 +178,17 @@ def rag_chatbot_uploader():
 
     with tab1:
         uploaded_file = st.file_uploader("Upload a pdf/docs/txt file", type=["pdf", "docx", "txt"])
-        generate_file_input = st.button("Load file")
+        generate_file_input = st.button("📂 Load file")
         
     with tab2:
         url_input = st.text_input("Website, Wikipedia, Youtube URL", placeholder="Enter the URL here...")
-        generate_url_input = st.button("Go Ahead 1")
+        generate_url_input = st.button("🚀 Go Ahead")
     
     with tab3:
         text_input = st.text_area(
             "Text Input", height=150, placeholder="Paste your text here..."
         )
-        generate_text_input = st.button("Go Ahead")
+        generate_text_input = st.button("👍 Go Ahead")
     
     user_input = None
 
@@ -236,7 +236,7 @@ def rag_chatbot_uploader():
                     clean_texts = [re.sub(r'\s{2,}', ' ', text).strip() for text in clean_texts]
                     user_input = "\n".join([text for text in clean_texts])
             except Exception as e:
-                st.exception(f"Exception:{e}")
+                st.exception(f"Exception:{str(e)[0:500]}")
 
     if user_input:
         with st.spinner("🔄 Retriever loading..."):
