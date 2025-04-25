@@ -59,13 +59,15 @@ def transcribe_with_groq(audio_path: str, groq_api_key: str) -> str:
     try:
         result = response.json()
         if "text" in result and result["text"].strip():
-        transcribed_text = result["text"].strip()
-        if len(transcribed_text) > 5:
-            query = transcribed_text
-            st.markdown("### ✅ Final Transcription:")
-            st.write(query)
+            transcribed_text = result["text"].strip()
+            if len(transcribed_text) > 5:
+                query = transcribed_text
+                st.markdown("### ✅ Final Transcription:")
+                st.write(query)
+            else:
+                st.warning("🟡 Transcription too short — try again.")
         else:
-            st.warning("🟡 Transcription too short — try again.")
+            st.error("❌ No valid text returned. Check mic input or background noise.")
     except Exception as e:
         raise ValueError(f"Could not decode JSON: {e}\nRaw response: {response.text}")
 
