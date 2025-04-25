@@ -2,6 +2,7 @@ pyspark
 plotly
 scipy
 scikit-learn
+matplotlib
 xgboost
 openpyxl
 xlsxwriter
