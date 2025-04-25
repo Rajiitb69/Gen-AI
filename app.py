@@ -387,7 +387,7 @@ def get_layout(tool):
     query = None
     audio_bytes = audio_recorder(pause_threshold=4.0)
     if audio_bytes:
-        st.write(f"🎧 Recorded audio size: {len(audio_bytes)} bytes")
+        st.success(f"🎧 Recorded audio size: {len(audio_bytes)} bytes")
         with tempfile.NamedTemporaryFile(delete=False, suffix=".wav") as tmp:
             tmp.write(audio_bytes)
             tmp_path = tmp.name
