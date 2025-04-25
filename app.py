@@ -58,7 +58,17 @@ def transcribe_with_groq(audio_path: str, groq_api_key: str) -> str:
                 "model": "whisper-large-v3"
             }
         )
-    result = response.json()
+    try:
+        result = response.json()
+    except Exception as e:
+        raise ValueError(f"Could not decode JSON: {e}\nRaw response: {response.text}")
+
+    if response.status_code != 200:
+        raise RuntimeError(f"Groq Whisper API error: {result}")
+
+    if "text" not in result:
+        raise KeyError(f"No 'text' in response: {result}")
+
     return result["text"]
 
 # Record audio using streamlit-webrtc
