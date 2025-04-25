@@ -28,3 +28,4 @@ streamlit
 openai
 streamlit-webrtc
 soundfile
+audio-recorder-streamlit
