@@ -27,3 +27,4 @@ numexpr
 streamlit
 openai
 streamlit-webrtc
+soundfile
