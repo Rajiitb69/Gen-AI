@@ -11,7 +11,9 @@ import xgboost as xgb
 from typing_extensions import Concatenate
 import validators
 import hashlib
-import speech_recognition as sr
+import openai
+from streamlit_audio_recorder import audio_recorder
+import tempfile
 
 from langchain.callbacks.streamlit import StreamlitCallbackHandler
 from langchain_groq import ChatGroq
@@ -40,25 +42,10 @@ youtube_transcript_api._api.requests_kwargs = {
     }
 }
 
-# Initialize SpeechRecognition recognizer
-recognizer = sr.Recognizer()
-
-# Function to capture speech and convert to text
-def listen():
-    with sr.Microphone() as source:
-        st.write("Listening...")
-        recognizer.adjust_for_ambient_noise(source)  # Adjust for ambient noise
-        audio = recognizer.listen(source)
-    try:
-        query = recognizer.recognize_google(audio)
-        st.write(f"Your query: {query}")
-        return query
-    except sr.UnknownValueError:
-        st.error("Sorry, I couldn't understand that.")
-        return None
-    except sr.RequestError:
-        st.error("There was an error with the speech recognition service.")
-        return None
+# Load Whisper model once
+@st.cache_resource
+def load_whisper():
+    return whisper.load_model("base")
 
 code_assistant_prompt = """You are CodeGenie, an expert software engineer and coding tutor.
 You are currently helping a user named {username}.
@@ -362,9 +349,27 @@ def get_layout(tool):
     output_dict = get_prompt(tool, user_name)
     st.title(output_dict['title'])
     output_dict['header']
-    
+    query = None
     # query = st.chat_input(placeholder="Write your query?")
-    query = st.button("🎤 Speak Your Query")
+    audio_bytes = audio_recorder(text="Click to speak", icon_size="2x")
+    openai.api_key = groq_api_key
+    openai.api_base = "https://api.groq.com/openai/v1"
+    if audio_bytes:
+        st.audio(audio_bytes, format="audio/wav")
+    
+        # Save the audio to temp file
+        with tempfile.NamedTemporaryFile(suffix=".mp3", delete=False) as f:
+            f.write(audio_bytes)
+            audio_path = f.name
+    
+        # Transcribe with Groq Whisper API
+        with open(audio_path, "rb") as f:
+            st.info("Transcribing your voice using Groq Whisper...")
+            result = openai.Audio.transcribe(
+                model="whisper-large-v3",
+                file=f
+            )
+            query = result["text"]
 
     # if query_input:
     #     query = query_input
