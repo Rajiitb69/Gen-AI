@@ -363,8 +363,8 @@ def get_layout(tool):
     st.title(output_dict['title'])
     output_dict['header']
     
-    query = st.chat_input(placeholder="Write your query?")
-    mic_button = st.button("🎤 Speak Your Query")
+    # query = st.chat_input(placeholder="Write your query?")
+    query = st.button("🎤 Speak Your Query")
 
     # if query_input:
     #     query = query_input
