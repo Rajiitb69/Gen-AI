@@ -373,7 +373,7 @@ def get_layout(tool):
     output_dict['header']
     # query = st.chat_input(placeholder="Write your query?")
     query = None
-    audio_bytes = audio_recorder(pause_threshold=2.0)
+    audio_bytes = audio_recorder(pause_threshold=1.0)
     
     if audio_bytes:
         file_path = "voice_query.wav"
@@ -381,6 +381,7 @@ def get_layout(tool):
             f.write(audio_bytes)
         st.success("✅ Audio recorded")
         query = transcribe_with_groq(file_path, groq_api_key)
+        st.success(f"You said: {query}")
     # --- Transcribe Button ---
     # if st.button("🎙️ Transcribe Speech"):
     #     st.write(f"Queue size: {audio_queue.qsize()} bytes")
@@ -395,8 +396,6 @@ def get_layout(tool):
     #             st.stop()
     #     else:
     #         st.error(f"Not working")
-        if os.path.exists(file_path):
-            st.audio(file_path)
 
     if "messages" not in st.session_state:
         st.session_state["messages"]=[]
