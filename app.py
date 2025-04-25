@@ -15,6 +15,7 @@ import openai
 import requests
 from audio_recorder_streamlit import audio_recorder
 import tempfile
+import wave
 
 from langchain.callbacks.streamlit import StreamlitCallbackHandler
 from langchain_groq import ChatGroq
@@ -386,12 +387,19 @@ def get_layout(tool):
     query = None
     audio_bytes = audio_recorder(pause_threshold=4.0)
     if audio_bytes:
+        st.write(f"🎧 Recorded audio size: {len(audio_bytes)} bytes")
         with tempfile.NamedTemporaryFile(delete=False, suffix=".wav") as tmp:
             tmp.write(audio_bytes)
             tmp_path = tmp.name
     
         st.success(f"✅ Audio recorded and saved: {tmp_path}")
         st.audio(tmp_path, format="audio/wav")
+        # Debug: Show the length of the audio
+        with wave.open(tmp_path, 'rb') as audio_file:
+            num_frames = audio_file.getnframes()
+            sample_rate = audio_file.getframerate()
+            duration = num_frames / sample_rate  # Duration in seconds
+            st.write(f"🎧 Audio length: {duration:.2f} seconds")
         query = transcribe_with_groq(tmp_path, groq_api_key)
         st.success(f"You said: {query}")
 
