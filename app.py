@@ -10,6 +10,7 @@ import sklearn
 import xgboost as xgb
 from typing_extensions import Concatenate
 import validators
+import hashlib
 
 from langchain.callbacks.streamlit import StreamlitCallbackHandler
 from langchain_groq import ChatGroq
@@ -407,7 +408,8 @@ def get_layout(tool):
                 result = local_vars.get('result', None)
                 fig = local_vars.get("fig", None)
                 if fig and hasattr(fig, 'to_plotly_json'):
-                    st.plotly_chart(fig)
+                    key_hash = hashlib.md5(final_answer.encode()).hexdigest()
+                    st.plotly_chart(fig, key=f"plot_{key_hash}")
             
                 if result is not None:
                     st.write("### Result")
