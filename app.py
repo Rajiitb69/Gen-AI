@@ -16,7 +16,8 @@ import tempfile
 from streamlit_webrtc import webrtc_streamer, WebRtcMode
 import av
 import requests
-import soundfile as sf
+import soundfile as SF
+import queue
 
 from langchain.callbacks.streamlit import StreamlitCallbackHandler
 from langchain_groq import ChatGroq
