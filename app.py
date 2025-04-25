@@ -16,6 +16,8 @@ import requests
 from audio_recorder_streamlit import audio_recorder
 import tempfile
 import wave
+import numpy as np
+import scipy.io.wavfile as wav
 
 from langchain.callbacks.streamlit import StreamlitCallbackHandler
 from langchain_groq import ChatGroq
@@ -389,19 +391,34 @@ def get_layout(tool):
     audio_bytes = audio_recorder(pause_threshold=4.0)
     if audio_bytes:
         st.success(f"🎧 Recorded audio size: {len(audio_bytes)} bytes")
+        # Save the recorded audio to a temporary file
         with tempfile.NamedTemporaryFile(delete=False, suffix=".wav") as tmp:
             tmp.write(audio_bytes)
             tmp_path = tmp.name
     
         st.success(f"✅ Audio recorded and saved: {tmp_path}")
-        st.audio(tmp_path, format="audio/wav")
+        st.audio(tmp_path, format="audio/wav")  # Play the recorded audio
+    
         # Debug: Show the length of the audio
         with wave.open(tmp_path, 'rb') as audio_file:
             num_frames = audio_file.getnframes()
             sample_rate = audio_file.getframerate()
             duration = num_frames / sample_rate  # Duration in seconds
-            st.success(f"🎧 Audio length: {duration:.2f} seconds")
-        query = transcribe_with_groq(tmp_path, groq_api_key)
+            st.write(f"🎧 Audio length: {duration:.2f} seconds")
+    
+        # Preprocess the audio: Normalize volume and remove silence if needed
+        audio_data = np.frombuffer(audio_bytes, dtype=np.int16)
+        st.write(f"🎧 Preprocessed audio length: {len(audio_data)} samples")
+    
+        # Normalize the audio (optional step)
+        max_audio_value = np.max(np.abs(audio_data))
+        normalized_audio = (audio_data / max_audio_value).astype(np.float32)  # Normalize to -1 to 1 range
+    
+        # Save the processed audio into a temporary file
+        processed_audio_path = tmp_path.replace(".wav", "_processed.wav")
+        wav.write(processed_audio_path, sample_rate, (normalized_audio * 32767).astype(np.int16))
+
+        query = transcribe_with_groq(processed_audio_path, groq_api_key)
         st.success(f"You said: {query}")
 
     if "messages" not in st.session_state:
