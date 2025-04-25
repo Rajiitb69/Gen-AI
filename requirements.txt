@@ -24,6 +24,6 @@ youtube_transcript_api
 unstructured
 pytube
 numexpr
-streamlit_audio_recorder
 streamlit
 openai
+streamlit-webrtc
