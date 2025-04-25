@@ -18,6 +18,7 @@ import av
 import requests
 import soundfile as SF
 import queue
+import time
 
 from langchain.callbacks.streamlit import StreamlitCallbackHandler
 from langchain_groq import ChatGroq
