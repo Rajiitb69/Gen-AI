@@ -58,12 +58,13 @@ class AudioProcessor:
 audio_processor = AudioProcessor()
 
 webrtc_ctx = webrtc_streamer(
-    key="speech",
+    key="example",
     mode=WebRtcMode.SENDONLY,
-    in_audio_enabled=True,
-    media_stream_constraints={"audio": True, "video": False},
-    sendback_audio=False,
-    on_audio_frame=audio_processor.recv,
+    media_stream_constraints={"audio": True, "video": False},  # Enable only mic
+    rtc_configuration={  # Optional: use default STUN server
+        "iceServers": [{"urls": ["stun:stun.l.google.com:19302"]}]
+    },
+    sendback_audio=False
 )
 
 code_assistant_prompt = """You are CodeGenie, an expert software engineer and coding tutor.
