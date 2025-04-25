@@ -363,13 +363,13 @@ def get_layout(tool):
     st.title(output_dict['title'])
     output_dict['header']
     
-    query_input = st.chat_input(placeholder="Write your query?")
-    mic_button = st.button("🎤 Speak Your Query")
+    queryt = st.chat_input(placeholder="Write your query?")
+    # mic_button = st.button("🎤 Speak Your Query")
 
-    if query_input:
-        query = query_input
-    elif mic_button:
-        query = listen()
+    # if query_input:
+    #     query = query_input
+    # elif mic_button:
+    #     query = listen()
 
     if "messages" not in st.session_state:
         st.session_state["messages"]=[]
