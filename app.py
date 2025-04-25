@@ -415,6 +415,8 @@ def get_layout(tool):
             except Exception as e:
                 st.error(f"Transcription failed: {e}")
                 st.stop()
+        else:
+            st.error(f"Not working")
 
     if "messages" not in st.session_state:
         st.session_state["messages"]=[]
