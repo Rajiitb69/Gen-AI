@@ -393,7 +393,7 @@ def get_layout(tool):
     output_dict = get_prompt(tool, user_name)
     st.title(output_dict['title'])
     output_dict['header']
-    query = st.chat_input(placeholder="Write your query?")
+    # query = st.chat_input(placeholder="Write your query?")
     webrtc_ctx = webrtc_streamer(
                                     key="speech-rag",
                                     mode=WebRtcMode.SENDONLY,
@@ -409,6 +409,7 @@ def get_layout(tool):
             st.info("Transcribing via Groq Whisper API...")
             try:
                 query = transcribe_with_groq(audio_path, groq_api_key)
+                
                 st.success(f"You said: {query}")
             except Exception as e:
                 st.error(f"Transcription failed: {e}")
