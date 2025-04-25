@@ -236,7 +236,7 @@ def rag_chatbot_uploader():
                     clean_texts = [re.sub(r'\s{2,}', ' ', text).strip() for text in clean_texts]
                     user_input = "\n".join([text for text in clean_texts])
             except Exception as e:
-                st.exception(f"Exception:{str(e)[0:500]}")
+                st.exception(f"Exception:{str(e)[0:500] + '.....'}")
 
     if user_input:
         with st.spinner("🔄 Retriever loading..."):
