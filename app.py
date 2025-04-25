@@ -399,7 +399,7 @@ def get_layout(tool):
             num_frames = audio_file.getnframes()
             sample_rate = audio_file.getframerate()
             duration = num_frames / sample_rate  # Duration in seconds
-            st.write(f"🎧 Audio length: {duration:.2f} seconds")
+            st.success(f"🎧 Audio length: {duration:.2f} seconds")
         query = transcribe_with_groq(tmp_path, groq_api_key)
         st.success(f"You said: {query}")
 
