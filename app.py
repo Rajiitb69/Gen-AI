@@ -15,6 +15,7 @@ import openai
 import tempfile
 from streamlit_webrtc import webrtc_streamer, WebRtcMode
 import av
+import requests
 
 from langchain.callbacks.streamlit import StreamlitCallbackHandler
 from langchain_groq import ChatGroq
@@ -43,6 +44,23 @@ youtube_transcript_api._api.requests_kwargs = {
     }
 }
 
+def transcribe_with_groq(audio_path: str, groq_api_key: str) -> str:
+    with open(audio_path, "rb") as f:
+        response = requests.post(
+            url="https://api.groq.com/openai/v1/audio/transcriptions",
+            headers={
+                "Authorization": f"Bearer {groq_api_key}"
+            },
+            files={
+                "file": f
+            },
+            data={
+                "model": "whisper-large-v3"
+            }
+        )
+    result = response.json()
+    return result["text"]
+
 # Record audio using streamlit-webrtc
 class AudioProcessor:
     def __init__(self):
@@ -56,16 +74,6 @@ class AudioProcessor:
         return b''.join([f.to_ndarray().tobytes() for f in self.audio_frames])
 
 audio_processor = AudioProcessor()
-
-webrtc_ctx = webrtc_streamer(
-    key="example",
-    mode=WebRtcMode.SENDONLY,
-    media_stream_constraints={"audio": True, "video": False},  # Enable only mic
-    rtc_configuration={  # Optional: use default STUN server
-        "iceServers": [{"urls": ["stun:stun.l.google.com:19302"]}]
-    },
-    sendback_audio=False
-)
 
 code_assistant_prompt = """You are CodeGenie, an expert software engineer and coding tutor.
 You are currently helping a user named {username}.
@@ -370,6 +378,11 @@ def get_layout(tool):
     st.title(output_dict['title'])
     output_dict['header']
     query = st.chat_input(placeholder="Write your query?")
+    webrtc_ctx = webrtc_streamer( key="speech",mode=WebRtcMode.SENDONLY,
+                                    media_stream_constraints={"audio": True, "video": False},  # Enable only mic
+                                    rtc_configuration={  # Optional: use default STUN server
+                                        "iceServers": [{"urls": ["stun:stun.l.google.com:19302"]}]},
+                                    sendback_audio=False)
     # --- Transcribe Button ---
     if st.button("🎙️ Transcribe Speech"):
         if webrtc_ctx.state.playing:
@@ -377,11 +390,8 @@ def get_layout(tool):
                 tmp_file.write(audio_processor.get_audio_bytes())
                 tmp_file_path = tmp_file.name
     
-            with st.spinner("Transcribing..."):
-                result = openai.Audio.transcribe(
-                    model="whisper-large-v3",
-                    file=open(tmp_file_path, "rb") )
-            query = result["text"]  # Use transcribed text as query
+            with st.spinner("Transcribing..."):   
+                query = transcribe_with_groq(audio_path, os.environ["GROQ_API_KEY"])
             st.success("Transcription Complete!")
 
     if "messages" not in st.session_state:
