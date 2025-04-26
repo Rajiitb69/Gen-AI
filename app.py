@@ -38,7 +38,7 @@ def download_utube_audio(youtube_url):
   try:
     ydl_opts = {
         'format': 'bestaudio/best',
-        'outtmpl': 'audio',
+        'outtmpl': 'utube_audio',
         'postprocessors': [{
             'key': 'FFmpegExtractAudio',
             'preferredcodec': 'm4a',
@@ -61,15 +61,17 @@ def get_text_from_audio(audio_file, groq_api_key):
         endpoint = "https://api.groq.com/openai/v1/audio/transcriptions"
         response = requests.post(endpoint, headers=headers, files=files, data=data)
     try:
-        result = response.json()
+      result = response.json()
     except Exception as e:
-        raise ValueError(f"Could not decode JSON: {e}\nRaw response: {response.text}")
+      raise ValueError(f"Could not decode JSON: {e}\nRaw response: {response.text}")
     if response.status_code == 200:
-        text = response.json()['text']
+      text = response.json()['text']
+      if os.path.exists(audio_file):
+        os.remove(audio_file)
     else:
-        raise RuntimeError(f"Groq Whisper API error: {result}")
+      raise RuntimeError(f"Groq Whisper API error: {result}")
     if "text" not in result:
-        raise KeyError(f"No 'text' in response: {result}")
+      raise KeyError(f"No 'text' in response: {result}")
 
     return text
 
@@ -282,9 +284,9 @@ def rag_chatbot_uploader():
                 with st.spinner("🔄 Uploading..."):
                     ## loading the website or yt video data
                     if "youtube.com" in url_input:
-                        response = download_utube_audio(youtube_url)
+                        response = download_utube_audio(url_input)
                         if response == 200:
-                            user_input = get_text_from_audio(audio_file, groq_api_key)
+                            user_input = get_text_from_audio('utube_audio.m4a', groq_api_key)
                         else:
                             st.error("couldn't download audio from youtube")
                     else:        
