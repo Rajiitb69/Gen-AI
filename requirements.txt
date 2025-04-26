@@ -25,3 +25,4 @@ numexpr
 streamlit
 openai
 yt-dlp
+imageio-ffmpeg
