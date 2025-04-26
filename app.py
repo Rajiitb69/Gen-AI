@@ -292,7 +292,7 @@ def rag_chatbot_uploader():
                         ydl_opts = {'quiet': True,
                             'skip_download': True,}
                         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-                            info = ydl.extract_info(youtube_url, download=False)
+                            info = ydl.extract_info(url_input, download=False)
                             audio_url = None
                             for f in info['formats']:
                                 if f.get('acodec') != 'none' and f.get('vcodec') == 'none':
