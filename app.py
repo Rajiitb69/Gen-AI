@@ -48,6 +48,10 @@ def download_utube_audio(youtube_url):
       'quiet': True,
       'noplaylist': True,  # Don't try to download playlists
     'user_agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115 Safari/537.36',  # Fake browser
+      'http_headers': {
+                'Accept-Language': 'en-US,en;q=0.9',
+                'Referer': 'https://www.youtube.com/',
+            }
     }
 
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
