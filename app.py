@@ -298,33 +298,34 @@ def rag_chatbot_uploader():
                                 if f.get('acodec') != 'none' and f.get('vcodec') == 'none':
                                     audio_url = f['url']
                                     break
+
                         if audio_url:
-                          if audio_url:
-                            st.success("Audio URL extracted!")
-                
-                            # Now send this audio_url to Groq Whisper endpoint
-                            endpoint = "https://api.groq.com/openai/v1/audio/transcriptions"
-                
-                            headers = {
-                                'Authorization': f'Bearer {groq_api_key}'
-                            }
-                            data = {
-                                'model': 'whisper-large-v3',
-                                'language': 'en',  # forcing English translation
-                                'url': audio_url
-                            }
-                
-                            response = requests.post(endpoint, headers=headers, data=data)
-                
-                            if response.status_code == 200:
-                                result = response.json()
-                                user_input = result['text']
-                                st.subheader("Transcription (Translated to English):")
-                            else:
-                                st.error(f"Failed to transcribe: {response.status_code}")
-                                st.text(response.text)
-                        else:
-                            st.error("No audio URL found!")
+                          st.success("Audio URL extracted!")
+              
+                          # Now send this audio_url to Groq Whisper endpoint
+                          endpoint = "https://api.groq.com/openai/v1/audio/transcriptions"
+              
+                          headers = {
+                              'Authorization': f'Bearer {groq_api_key}'
+                          }
+                          files = {
+                              'file': (None, audio_url),}
+                          data = {
+                              'model': 'whisper-large-v3',
+                              'language': 'en',  # Optional: force English output
+                          }
+              
+                          response = requests.post(endpoint, headers=headers, files=files, data=data)
+              
+                          if response.status_code == 200:
+                              result = response.json()
+                              user_input = result['text']
+                              st.subheader("Transcription (Translated to English):")
+                          else:
+                              st.error(f"Failed to transcribe: {response.status_code}")
+                              st.text(response.text)
+                      else:
+                          st.error("No audio URL found!")
                     else:        
                         if "en.wikipedia.org" in url_input:
                             query = url_input.split("/")[-1]
