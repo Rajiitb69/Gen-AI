@@ -223,7 +223,7 @@ def rag_chatbot_uploader():
         generate_file_input = st.button("📂 Load file")
         
     with tab2:
-        url_input = st.text_input("Website, Wikipedia, placeholder="Enter the URL here...")
+        url_input = st.text_input("Website, Wikipedia URL", placeholder="Enter the URL here...")
         generate_url_input = st.button("🚀 Go Ahead")
     
     with tab3:
