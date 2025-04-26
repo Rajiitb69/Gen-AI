@@ -288,11 +288,43 @@ def rag_chatbot_uploader():
                 with st.spinner("🔄 Uploading..."):
                     ## loading the website or yt video data
                     if "youtube.com" in url_input:
-                        response = download_utube_audio(url_input)
-                        if response == 200:
-                            user_input = get_text_from_audio('utube_audio.m4a', groq_api_key)
-                        # else:
-                        #     st.error("couldn't download audio from youtube")
+                        st.info("Extracting audio URL...")
+                        ydl_opts = {'quiet': True,
+                            'skip_download': True,}
+                        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+                            info = ydl.extract_info(youtube_url, download=False)
+                            audio_url = None
+                            for f in info['formats']:
+                                if f.get('acodec') != 'none' and f.get('vcodec') == 'none':
+                                    audio_url = f['url']
+                                    break
+                        if audio_url:
+                          if audio_url:
+                            st.success("Audio URL extracted!")
+                
+                            # Now send this audio_url to Groq Whisper endpoint
+                            endpoint = "https://api.groq.com/openai/v1/audio/transcriptions"
+                
+                            headers = {
+                                'Authorization': f'Bearer {groq_api_key}'
+                            }
+                            data = {
+                                'model': 'whisper-large-v3',
+                                'language': 'en',  # forcing English translation
+                                'url': audio_url
+                            }
+                
+                            response = requests.post(endpoint, headers=headers, data=data)
+                
+                            if response.status_code == 200:
+                                result = response.json()
+                                user_input = result['text']
+                                st.subheader("Transcription (Translated to English):")
+                            else:
+                                st.error(f"Failed to transcribe: {response.status_code}")
+                                st.text(response.text)
+                        else:
+                            st.error("No audio URL found!")
                     else:        
                         if "en.wikipedia.org" in url_input:
                             query = url_input.split("/")[-1]
