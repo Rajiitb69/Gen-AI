@@ -49,7 +49,8 @@ def download_utube_audio(youtube_url):
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
         ydl.download([youtube_url])
     response = 200
-  except:
+  except Exception as e:
+    st.error(str(e))
     response = 404
   return response
 
