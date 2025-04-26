@@ -13,6 +13,7 @@ import validators
 import hashlib
 import openai
 import requests
+import yt_dlp
 
 from langchain.callbacks.streamlit import StreamlitCallbackHandler
 from langchain_groq import ChatGroq
