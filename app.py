@@ -287,8 +287,8 @@ def rag_chatbot_uploader():
                         response = download_utube_audio(url_input)
                         if response == 200:
                             user_input = get_text_from_audio('utube_audio.m4a', groq_api_key)
-                        else:
-                            st.error("couldn't download audio from youtube")
+                        # else:
+                        #     st.error("couldn't download audio from youtube")
                     else:        
                         if "en.wikipedia.org" in url_input:
                             query = url_input.split("/")[-1]
