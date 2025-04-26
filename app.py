@@ -324,8 +324,8 @@ def rag_chatbot_uploader():
                           else:
                               st.error(f"Failed to transcribe: {response.status_code}")
                               st.text(response.text)
-                      else:
-                          st.error("No audio URL found!")
+                        else:
+                            st.error("No audio URL found!")
                     else:        
                         if "en.wikipedia.org" in url_input:
                             query = url_input.split("/")[-1]
