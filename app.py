@@ -13,11 +13,6 @@ import validators
 import hashlib
 import openai
 import requests
-from audio_recorder_streamlit import audio_recorder
-import tempfile
-import wave
-import numpy as np
-import scipy.io.wavfile as wav
 
 from langchain.callbacks.streamlit import StreamlitCallbackHandler
 from langchain_groq import ChatGroq
@@ -38,51 +33,45 @@ from langchain.schema import Document
 from langchain.retrievers import BM25Retriever, MergerRetriever
 from langchain.chains import RetrievalQA, create_retrieval_chain, create_history_aware_retriever
 ## Code #####
-import youtube_transcript_api._api 
-youtube_transcript_api._api.requests_kwargs = {
-    "proxies": {
-        "http": st.secrets["proxy"],
-        "https": st.secrets["proxy"]
-    }
-}
 
-def transcribe_with_groq(audio_path: str, groq_api_key: str) -> str:
-    with open(audio_path, "rb") as f:
-        response = requests.post(
-            url="https://api.groq.com/openai/v1/audio/transcriptions",
-            headers={
-                "Authorization": f"Bearer {groq_api_key}"
-            },
-            files={
-                "file": f
-            },
-            data={
-                "model": "whisper-large-v3"
-            }
-        )
+def download_utube_audio(youtube_url):
+  try:
+    ydl_opts = {
+        'format': 'bestaudio/best',
+        'outtmpl': 'audio',
+        'postprocessors': [{
+            'key': 'FFmpegExtractAudio',
+            'preferredcodec': 'm4a',
+        }],
+        'cookies_from_browser': 'chrome',  # <-- Corrected here
+    }
+
+    with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+        ydl.download([youtube_url])
+    response = 200
+  except:
+    response = 404
+  return response
+
+def get_text_from_audio(audio_file, groq_api_key):
+    with open(audio_file, 'rb') as audio_fp:
+        files = {'file': (audio_fp.name, audio_fp, 'audio/m4a')}
+        data = {'model': 'whisper-large-v3','language': 'en'}
+        headers = {'Authorization': f'Bearer {groq_api_key}'}
+        endpoint = "https://api.groq.com/openai/v1/audio/transcriptions"
+        response = requests.post(endpoint, headers=headers, files=files, data=data)
     try:
         result = response.json()
-        st.success(result)
-        if "text" in result and result["text"].strip():
-            transcribed_text = result["text"].strip()
-            if len(transcribed_text) > 5:
-                query = transcribed_text
-                st.markdown("### ✅ Final Transcription:")
-                st.success(query)
-            else:
-                st.warning("🟡 Transcription too short — try again.")
-        else:
-            st.error("❌ No valid text returned. Check mic input or background noise.")
     except Exception as e:
         raise ValueError(f"Could not decode JSON: {e}\nRaw response: {response.text}")
-
-    if response.status_code != 200:
+    if response.status_code == 200:
+        text = response.json()['text']
+    else:
         raise RuntimeError(f"Groq Whisper API error: {result}")
-
     if "text" not in result:
         raise KeyError(f"No 'text' in response: {result}")
 
-    return query
+    return text
 
 code_assistant_prompt = """You are CodeGenie, an expert software engineer and coding tutor.
 You are currently helping a user named {username}.
@@ -293,18 +282,23 @@ def rag_chatbot_uploader():
                 with st.spinner("🔄 Uploading..."):
                     ## loading the website or yt video data
                     if "youtube.com" in url_input:
-                        loader=YoutubeLoader.from_youtube_url(url_input.strip(), language=["en"])
-                    elif "en.wikipedia.org" in url_input:
-                        query = url_input.split("/")[-1]
-                        loader = WikipediaLoader(query=query, load_max_docs=2)
-                    else:
-                        loader=UnstructuredURLLoader(urls=[url_input],ssl_verify=False,
-                                                     headers={"User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 13_5_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/116.0.0.0 Safari/537.36"})
-                    docs=loader.load()
-                    raw_texts = [doc.page_content for doc in docs]
-                    clean_texts = [re.sub(r'\s*\n\s*', ' ', text) for text in raw_texts]
-                    clean_texts = [re.sub(r'\s{2,}', ' ', text).strip() for text in clean_texts]
-                    user_input = "\n".join([text for text in clean_texts])
+                        response = download_utube_audio(youtube_url)
+                        if response == 200:
+                            user_input = get_text_from_audio(audio_file, groq_api_key)
+                        else:
+                            st.error("couldn't download audio from youtube")
+                    else:        
+                        if "en.wikipedia.org" in url_input:
+                            query = url_input.split("/")[-1]
+                            loader = WikipediaLoader(query=query, load_max_docs=2)
+                        else:
+                            loader=UnstructuredURLLoader(urls=[url_input],ssl_verify=False,
+                                                         headers={"User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 13_5_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/116.0.0.0 Safari/537.36"})
+                        docs=loader.load()
+                        raw_texts = [doc.page_content for doc in docs]
+                        clean_texts = [re.sub(r'\s*\n\s*', ' ', text) for text in raw_texts]
+                        clean_texts = [re.sub(r'\s{2,}', ' ', text).strip() for text in clean_texts]
+                        user_input = "\n".join([text for text in clean_texts])
             except Exception as e:
                 st.exception(f"Exception:{str(e)[0:500] + '.....'}")
 
@@ -386,41 +380,7 @@ def get_layout(tool):
     output_dict = get_prompt(tool, user_name)
     st.title(output_dict['title'])
     output_dict['header']
-    # query = st.chat_input(placeholder="Write your query?")
-    query = None
-    audio_bytes = audio_recorder(pause_threshold=4.0)
-    if audio_bytes:
-        st.success(f"🎧 Recorded audio size: {len(audio_bytes)} bytes")
-        # Save the recorded audio to a temporary file
-        with tempfile.NamedTemporaryFile(delete=False, suffix=".wav") as tmp:
-            tmp.write(audio_bytes)
-            tmp_path = tmp.name
-    
-        st.success(f"✅ Audio recorded and saved: {tmp_path}")
-        st.audio(tmp_path, format="audio/wav")  # Play the recorded audio
-    
-        # Debug: Show the length of the audio
-        with wave.open(tmp_path, 'rb') as audio_file:
-            num_frames = audio_file.getnframes()
-            sample_rate = audio_file.getframerate()
-            duration = num_frames / sample_rate  # Duration in seconds
-            st.write(f"🎧 Audio length: {duration:.2f} seconds")
-    
-        # Preprocess the audio: Normalize volume and remove silence if needed
-        audio_data = np.frombuffer(audio_bytes, dtype=np.int16)
-        st.write(f"🎧 Preprocessed audio length: {len(audio_data)} samples")
-    
-        # Normalize the audio (optional step)
-        max_audio_value = np.max(np.abs(audio_data))
-        normalized_audio = (audio_data / max_audio_value).astype(np.float32)  # Normalize to -1 to 1 range
-    
-        # Save the processed audio into a temporary file
-        processed_audio_path = tmp_path.replace(".wav", "_processed.wav")
-        wav.write(processed_audio_path, sample_rate, (normalized_audio * 32767).astype(np.int16))
-
-        query = transcribe_with_groq(processed_audio_path, groq_api_key)
-        st.success(f"You said: {query}")
-
+    query = st.chat_input(placeholder="Write your query?")
     if "messages" not in st.session_state:
         st.session_state["messages"]=[]
         st.chat_message("assistant").write(output_dict['assistant_content'])
