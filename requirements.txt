@@ -20,12 +20,8 @@ pypdf
 PyPDF2
 python-docx
 validators==0.28.1
-youtube_transcript_api
 unstructured
-pytube
 numexpr
 streamlit
 openai
-streamlit-webrtc
-soundfile
-audio-recorder-streamlit
+yt-dlp
