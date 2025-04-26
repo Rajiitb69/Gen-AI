@@ -45,6 +45,7 @@ def download_utube_audio(youtube_url):
             'preferredcodec': 'm4a',
         }],
         'cookies_from_browser': 'chrome',  # <-- Corrected here
+      'quiet': True,
       'noplaylist': True,  # Don't try to download playlists
     'user_agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115 Safari/537.36',  # Fake browser
     }
@@ -60,7 +61,7 @@ def download_utube_audio(youtube_url):
 def get_text_from_audio(audio_file, groq_api_key):
     with open(audio_file, 'rb') as audio_fp:
         files = {'file': (audio_fp.name, audio_fp, 'audio/m4a')}
-        data = {'model': 'whisper-large-v3','language': 'en'}
+        data = {'model': 'whisper-large-v3','language': 'en', 'response_format': 'text'}
         headers = {'Authorization': f'Bearer {groq_api_key}'}
         endpoint = "https://api.groq.com/openai/v1/audio/transcriptions"
         response = requests.post(endpoint, headers=headers, files=files, data=data)
@@ -288,44 +289,49 @@ def rag_chatbot_uploader():
                 with st.spinner("🔄 Uploading..."):
                     ## loading the website or yt video data
                     if "youtube.com" in url_input:
-                        st.info("Extracting audio URL...")
-                        ydl_opts = {'quiet': True,
-                            'skip_download': True,}
-                        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-                            info = ydl.extract_info(url_input, download=False)
-                            audio_url = None
-                            for f in info['formats']:
-                                if f.get('acodec') != 'none' and f.get('vcodec') == 'none':
-                                    audio_url = f['url']
-                                    break
+                      st.info("Extracting audio URL...")
+                      response = download_utube_audio(url_input)
+                      if response == 200:
+                        user_input = get_text_from_audio('utube_audio.m4a', groq_api_key)
+                        
+                      
+                        # ydl_opts = {'quiet': True,
+                        #     'skip_download': True,}
+                        # with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+                        #     info = ydl.extract_info(url_input, download=False)
+                        #     audio_url = None
+                        #     for f in info['formats']:
+                        #         if f.get('acodec') != 'none' and f.get('vcodec') == 'none':
+                        #             audio_url = f['url']
+                        #             break
 
-                        if audio_url:
-                          st.success("Audio URL extracted!")
+                        # if audio_url:
+                        #   st.success("Audio URL extracted!")
               
-                          # Now send this audio_url to Groq Whisper endpoint
-                          endpoint = "https://api.groq.com/openai/v1/audio/transcriptions"
+                        #   # Now send this audio_url to Groq Whisper endpoint
+                        #   endpoint = "https://api.groq.com/openai/v1/audio/transcriptions"
               
-                          headers = {
-                              'Authorization': f'Bearer {groq_api_key}'
-                          }
-                          files = {
-                              'file': (None, audio_url),}
-                          data = {
-                              'model': 'whisper-large-v3',
-                              'language': 'en',  # Optional: force English output
-                          }
+                        #   headers = {
+                        #       'Authorization': f'Bearer {groq_api_key}'
+                        #   }
+                        #   files = {
+                        #       'file': (None, audio_url),}
+                        #   data = {
+                        #       'model': 'whisper-large-v3',
+                        #       'language': 'en',  # Optional: force English output
+                        #   }
               
-                          response = requests.post(endpoint, headers=headers, files=files, data=data)
+                        #   response = requests.post(endpoint, headers=headers, files=files, data=data)
               
-                          if response.status_code == 200:
-                              result = response.json()
-                              user_input = result['text']
-                              st.subheader("Transcription (Translated to English):")
-                          else:
-                              st.error(f"Failed to transcribe: {response.status_code}")
-                              st.text(response.text)
-                        else:
-                            st.error("No audio URL found!")
+                        #   if response.status_code == 200:
+                        #       result = response.json()
+                        #       user_input = result['text']
+                        #       st.subheader("Transcription (Translated to English):")
+                        #   else:
+                        #       st.error(f"Failed to transcribe: {response.status_code}")
+                        #       st.text(response.text)
+                        # else:
+                        #     st.error("No audio URL found!")
                     else:        
                         if "en.wikipedia.org" in url_input:
                             query = url_input.split("/")[-1]
