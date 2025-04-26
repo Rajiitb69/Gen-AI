@@ -45,6 +45,8 @@ def download_utube_audio(youtube_url):
             'preferredcodec': 'm4a',
         }],
         'cookies_from_browser': 'chrome',  # <-- Corrected here
+      'noplaylist': True,  # Don't try to download playlists
+    'user_agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115 Safari/537.36',  # Fake browser
     }
 
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
