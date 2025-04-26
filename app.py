@@ -13,7 +13,6 @@ import validators
 import hashlib
 import openai
 import requests
-import yt_dlp
 
 from langchain.callbacks.streamlit import StreamlitCallbackHandler
 from langchain_groq import ChatGroq
@@ -34,33 +33,6 @@ from langchain.schema import Document
 from langchain.retrievers import BM25Retriever, MergerRetriever
 from langchain.chains import RetrievalQA, create_retrieval_chain, create_history_aware_retriever
 ## Code #####
-
-def download_utube_audio(youtube_url):
-  try:
-    ydl_opts = {
-        'format': 'bestaudio/best',
-        'outtmpl': 'utube_audio',
-        'postprocessors': [{
-            'key': 'FFmpegExtractAudio',
-            'preferredcodec': 'm4a',
-        }],
-        'cookies_from_browser': 'chrome',  # <-- Corrected here
-      'quiet': True,
-      'noplaylist': True,  # Don't try to download playlists
-    'user_agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115 Safari/537.36',  # Fake browser
-      'http_headers': {
-                'Accept-Language': 'en-US,en;q=0.9',
-                'Referer': 'https://www.youtube.com/',
-            }
-    }
-
-    with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-        ydl.download([youtube_url])
-    response = 200
-  except Exception as e:
-    st.error(str(e))
-    response = 404
-  return response
 
 def get_text_from_audio(audio_file, groq_api_key):
     with open(audio_file, 'rb') as audio_fp:
@@ -251,7 +223,7 @@ def rag_chatbot_uploader():
         generate_file_input = st.button("📂 Load file")
         
     with tab2:
-        url_input = st.text_input("Website, Wikipedia, Youtube URL", placeholder="Enter the URL here...")
+        url_input = st.text_input("Website, Wikipedia, placeholder="Enter the URL here...")
         generate_url_input = st.button("🚀 Go Ahead")
     
     with tab3:
@@ -291,63 +263,17 @@ def rag_chatbot_uploader():
         else:
             try:
                 with st.spinner("🔄 Uploading..."):
-                    ## loading the website or yt video data
-                    if "youtube.com" in url_input:
-                      st.info("Extracting audio URL...")
-                      response = download_utube_audio(url_input)
-                      if response == 200:
-                        user_input = get_text_from_audio('utube_audio.m4a', groq_api_key)
-                        
-                      
-                        # ydl_opts = {'quiet': True,
-                        #     'skip_download': True,}
-                        # with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-                        #     info = ydl.extract_info(url_input, download=False)
-                        #     audio_url = None
-                        #     for f in info['formats']:
-                        #         if f.get('acodec') != 'none' and f.get('vcodec') == 'none':
-                        #             audio_url = f['url']
-                        #             break
-
-                        # if audio_url:
-                        #   st.success("Audio URL extracted!")
-              
-                        #   # Now send this audio_url to Groq Whisper endpoint
-                        #   endpoint = "https://api.groq.com/openai/v1/audio/transcriptions"
-              
-                        #   headers = {
-                        #       'Authorization': f'Bearer {groq_api_key}'
-                        #   }
-                        #   files = {
-                        #       'file': (None, audio_url),}
-                        #   data = {
-                        #       'model': 'whisper-large-v3',
-                        #       'language': 'en',  # Optional: force English output
-                        #   }
-              
-                        #   response = requests.post(endpoint, headers=headers, files=files, data=data)
-              
-                        #   if response.status_code == 200:
-                        #       result = response.json()
-                        #       user_input = result['text']
-                        #       st.subheader("Transcription (Translated to English):")
-                        #   else:
-                        #       st.error(f"Failed to transcribe: {response.status_code}")
-                        #       st.text(response.text)
-                        # else:
-                        #     st.error("No audio URL found!")
-                    else:        
-                        if "en.wikipedia.org" in url_input:
-                            query = url_input.split("/")[-1]
-                            loader = WikipediaLoader(query=query, load_max_docs=2)
-                        else:
-                            loader=UnstructuredURLLoader(urls=[url_input],ssl_verify=False,
-                                                         headers={"User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 13_5_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/116.0.0.0 Safari/537.36"})
-                        docs=loader.load()
-                        raw_texts = [doc.page_content for doc in docs]
-                        clean_texts = [re.sub(r'\s*\n\s*', ' ', text) for text in raw_texts]
-                        clean_texts = [re.sub(r'\s{2,}', ' ', text).strip() for text in clean_texts]
-                        user_input = "\n".join([text for text in clean_texts])
+                    if "en.wikipedia.org" in url_input:
+                        query = url_input.split("/")[-1]
+                        loader = WikipediaLoader(query=query, load_max_docs=2)
+                    else:
+                        loader=UnstructuredURLLoader(urls=[url_input],ssl_verify=False,
+                                                     headers={"User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 13_5_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/116.0.0.0 Safari/537.36"})
+                    docs=loader.load()
+                    raw_texts = [doc.page_content for doc in docs]
+                    clean_texts = [re.sub(r'\s*\n\s*', ' ', text) for text in raw_texts]
+                    clean_texts = [re.sub(r'\s{2,}', ' ', text).strip() for text in clean_texts]
+                    user_input = "\n".join([text for text in clean_texts])
             except Exception as e:
                 st.exception(f"Exception:{str(e)[0:500] + '.....'}")
 
